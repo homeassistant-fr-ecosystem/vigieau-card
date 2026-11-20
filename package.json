@@ -1,0 +1,35 @@
+{
+  "name": "vigieau-card",
+  "version": "1.0.0",
+  "description": "A custom Home Assistant Lovelace card for displaying French drought water restriction data",
+  "type": "module",
+  "main": "dist/vigieau-card.js",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "lint": "eslint src"
+  },
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "custom-card",
+    "vigieau",
+    "drought",
+    "restrictions"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^1.0.2",
+    "custom-card-helpers": "^1.9.0",
+    "lit": "^3.3.3",
+    "tslib": "^2.9.1"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-url": "^8.0.2",
+    "typescript": "^5.3.3"
+  }
+}
