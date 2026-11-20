@@ -2,32 +2,12 @@
  * Translation functions for the Vigieau Card
  */
 
-// French translations
-const FR_TRANSLATIONS = {
-  unknown: 'Inconnu',
-  no_data: 'Aucune donnée',
-  fountains: 'Fontaines',
-  gardens: 'Jardins',
-  lawns: 'Pelouses',
-  vehicle_wash: 'Lavage de véhicules',
-  pools: 'Piscines',
-  roads: 'Routes',
-  roofs: 'Toits',
-  ponds: 'Étangs',
-};
+import EN_TRANSLATIONS from './localize.common.json';
+import FR_TRANSLATIONS from './localize.fr.json';
 
-// English translations
-const EN_TRANSLATIONS = {
-  unknown: 'Unknown',
-  no_data: 'No data',
-  fountains: 'Fountains',
-  gardens: 'Gardens',
-  lawns: 'Lawns',
-  vehicle_wash: 'Vehicle Wash',
-  pools: 'Pools',
-  roads: 'Roads',
-  roofs: 'Roofs',
-  ponds: 'Ponds',
+const TRANSLATIONS: Record<string, Record<string, string>> = {
+  en: EN_TRANSLATIONS,
+  fr: FR_TRANSLATIONS,
 };
 
 /**
@@ -37,7 +17,7 @@ const EN_TRANSLATIONS = {
  * @returns The localized string
  */
 export function localizeCommon(key: string, lang: string = 'en'): string {
-  const translations = lang.startsWith('fr') ? FR_TRANSLATIONS : EN_TRANSLATIONS;
+  const translations = TRANSLATIONS[lang.startsWith('fr') ? 'fr' : 'en'];
   return translations[key] || key;
 }
 

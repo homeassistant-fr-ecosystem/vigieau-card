@@ -7,7 +7,7 @@
 import { LitElement, html, css, PropertyValues, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant, LovelaceCardEditor } from 'custom-card-helpers';
-import { localize, localizeCommon } from './localize';
+import { localizeCommon } from './localize';
 
 /**
  * Configuration interface for the Vigieau Card
@@ -37,14 +37,6 @@ interface HassEntity {
     id: string;
     parent_id: string | null;
     user_id: string | null;
-  };
-}
-
-interface SensorEntity extends HassEntity {
-  attributes: {
-    unit_of_measurement?: string;
-    friendly_name?: string;
-    [key: string]: unknown;
   };
 }
 
@@ -101,7 +93,7 @@ export class VigieauCard extends LitElement {
    */
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
     await import('./vigieau-card-editor');
-    return document.createElement('vigieau-card-editor');
+    return document.createElement('vigieau-card-editor') as LovelaceCardEditor;
   }
 
   /**
@@ -304,7 +296,7 @@ export class VigieauCard extends LitElement {
     }
 
     // Progress bar if numeric level available
-    let progressHtml = '';
+    let progressHtml: TemplateResult = html``;
     if (alertLevelNumeric !== null && !isNaN(Number(alertLevelNumeric))) {
       const percent = Math.round((Number(alertLevelNumeric) / 4) * 100);
       progressHtml = html`
@@ -312,7 +304,7 @@ export class VigieauCard extends LitElement {
           <div class="progress-fill" style="width: ${percent}%"></div>
         </div>
         <span class="progress-percent">${percent}%</span>
-      ` as TemplateResult;
+      `;
     }
 
     return html`
@@ -562,8 +554,22 @@ export class VigieauCard extends LitElement {
 }
 
 // Register card in Home Assistant
-(window as any).customCards = (window as any).customCards || [];
-(window as any).customCards.push({
+interface CustomCard {
+  type: string;
+  name: string;
+  description: string;
+  preview: boolean;
+  documentationURL: string;
+}
+
+declare global {
+  interface Window {
+    customCards: CustomCard[];
+  }
+}
+
+window.customCards = window.customCards || [];
+window.customCards.push({
   type: 'vigieau-card',
   name: 'Vigieau Eau',
   description: 'French drought water restrictions card',

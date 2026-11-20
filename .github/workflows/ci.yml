@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [22.x]
 
     steps:
     - name: Checkout code
@@ -44,7 +44,7 @@ jobs:
         ls -lh dist/
 
     - name: Upload build artifact
-      if: matrix.node-version == '20.x'
+      if: matrix.node-version == '22.x'
       uses: actions/upload-artifact@v4
       with:
         name: build-output
@@ -62,7 +62,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20.x
+        node-version: 22.x
         cache: 'npm'
 
     - name: Install dependencies
@@ -82,7 +82,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20.x
+        node-version: 22.x
         cache: 'npm'
 
     - name: Validate translation files
@@ -103,7 +103,7 @@ jobs:
         echo "Checking translation completeness..."
 
         # Get all keys from en.json
-        EN_KEYS=$(jq -r 'paths(scalars) | join(".")' src/localize.common.json 2>/dev/null || echo "[]")
+        EN_KEYS=$(jq -r 'paths(scalars) | join(".")' src/localize.common.json 2>/dev/null | sort || echo "[]")
 
         for file in src/localize*.json; do
           if [ "$file" != "src/localize.common.json" ]; then
@@ -141,7 +141,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20.x
+        node-version: 22.x
         cache: 'npm'
 
     - name: Install dependencies
@@ -174,7 +174,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20.x
+        node-version: 22.x
         cache: 'npm'
 
     - name: Install dependencies

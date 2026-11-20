@@ -2,8 +2,8 @@
  * Vigieau Card Editor - Configuration editor for the Vigieau custom card
  */
 
-import { html, css, LitElement } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { html, css, LitElement, TemplateResult } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
 import { HomeAssistant } from 'custom-card-helpers';
 
 /**

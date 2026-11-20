@@ -10,6 +10,7 @@
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
     "isolatedModules": true,
+    "experimentalDecorators": true,
     "declaration": true,
     "outDir": "./dist",
     "types": ["lit"]

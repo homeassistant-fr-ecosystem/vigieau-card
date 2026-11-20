@@ -11,6 +11,9 @@ export default {
     file: 'dist/vigieau-card.js',
     format: 'es',
     sourcemap: true,
+    // Inline dynamically imported chunks (e.g. the card editor) so the card
+    // ships as a single ES module file, as HACS expects.
+    inlineDynamicImports: true,
   },
   plugins: [
     resolve({
