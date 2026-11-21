@@ -4,6 +4,8 @@ Une carte Lovelace personnalisée pour Home Assistant affichant les données de 
 
 ## Aperçu
 
+![Vigieau Card](logo.png)
+
 La carte affiche le niveau d'alerte actuel (avec code couleur), la liste des restrictions par catégorie d'usage, et une barre de progression du niveau d'alerte. Elle s'intègre nativement à l'éditeur d'interface de Home Assistant.
 
 ## Fonctionnalités
