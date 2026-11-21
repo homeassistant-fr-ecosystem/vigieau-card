@@ -8,6 +8,10 @@ import { LitElement, html, css, PropertyValues, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant, LovelaceCardEditor } from 'custom-card-helpers';
 import { localizeCommon } from './localize';
+import { VERSION } from './version.generated';
+
+// Bannière de version affichée à l'ouverture du navigateur
+console.info(`Vigieau Card v${VERSION}`);
 
 /**
  * Configuration interface for the Vigieau Card
