@@ -287,6 +287,14 @@ export class VigieauCard extends LitElement {
     if (binaryMatch) {
       return binaryMatch[1];
     }
+    // Vigieau integration binary sensors use underscores:
+    // binary_sensor.vigieau_{ville}_eaux_de_surface_{categorie}_binary_{ville}
+    const binaryVigieauMatch = entityId.match(
+      /^binary_sensor\.vigieau_.+?_eaux_de_surface_(.+)_binary_/
+    );
+    if (binaryVigieauMatch) {
+      return binaryVigieauMatch[1];
+    }
     // Fallback: use the part after the domain and before the last _restrictions or suffix
     const parts = entityId.split('.');
     if (parts.length > 1) {

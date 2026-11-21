@@ -180,13 +180,13 @@ export class VigieauCardEditor extends LitElement {
           <ha-entity-picker
             .hass=${this.hass}
             .value=${this._config.restriction_entities || []}
-            .domain=${['sensor']}
+            .domain=${['sensor', 'binary_sensor']}
             .multiple=${true}
             @value-changed=${(e: CustomEvent) => {
               this._config.restriction_entities = e.detail.value as string[];
               this._notifyConfigChanged();
             }}
-            .placeholder=${isFr ? 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard' : 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard'}
+            .placeholder=${isFr ? 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard ou binary_sensor.vigieau_...' : 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard or binary_sensor.vigieau_...'}
           ></ha-entity-picker>
         </div>
 

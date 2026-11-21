@@ -47,7 +47,7 @@ describe('buildEntityIdsFromCityCode', () => {
     const result = buildEntityIdsFromCityCode('35322');
     expect(result.alert_level_entity).toBe('sensor.alert_level_in_35322');
     expect(result.alert_level_numeric_entity).toBe(
-      'sensor.alert_level_numeric_35322'
+      'sensor.alert_level_in_35322_numeric'
     );
     expect(result.restriction_entities).toContain(
       'sensor.alimentation_des_fontaines_restrictions_35322'

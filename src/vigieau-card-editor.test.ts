@@ -78,7 +78,7 @@ describe('VigieauCardEditor', () => {
     it('construit les entity ids à partir d un code INSEE', () => {
       const built = buildEntityIdsFromCityCode('35322');
       expect(built.alert_level_entity).toBe('sensor.alert_level_in_35322');
-      expect(built.alert_level_numeric_entity).toBe('sensor.alert_level_numeric_35322');
+      expect(built.alert_level_numeric_entity).toBe('sensor.alert_level_in_35322_numeric');
       expect(built.restriction_entities).toContain(
         'sensor.alimentation_des_fontaines_restrictions_35322'
       );
@@ -103,7 +103,7 @@ describe('VigieauCardEditor', () => {
       expect(editor.config.city_code).toBe('thorigne_fouillard');
       expect(editor.config.alert_level_entity).toBe('sensor.alert_level_in_thorigne_fouillard');
       expect(editor.config.alert_level_numeric_entity).toBe(
-        'sensor.alert_level_numeric_thorigne_fouillard'
+        'sensor.alert_level_in_thorigne_fouillard_numeric'
       );
       expect(editor.config.restriction_entities).toContain(
         'sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard'
@@ -154,7 +154,7 @@ describe('VigieauCardEditor', () => {
         'sensor.alert_level_in_thorigne_fouillard'
       );
       expect(editor.config.alert_level_numeric_entity).toBe(
-        'sensor.alert_level_numeric_thorigne_fouillard'
+        'sensor.alert_level_in_thorigne_fouillard_numeric'
       );
       expect(editor.config.restriction_entities).toContain(
         'sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard'

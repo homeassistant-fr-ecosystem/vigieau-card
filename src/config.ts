@@ -75,7 +75,7 @@ export function buildEntityIdsFromCityCode(cityCode: string): {
   const slug = cityCode.toLowerCase().trim();
   return {
     alert_level_entity: `sensor.alert_level_in_${slug}`,
-    alert_level_numeric_entity: `sensor.alert_level_numeric_${slug}`,
+    alert_level_numeric_entity: `sensor.alert_level_in_${slug}_numeric`,
     restriction_entities: RESTRICTION_CATEGORIES.map(
       (cat) => `sensor.${cat}_restrictions_${slug}`
     ),
