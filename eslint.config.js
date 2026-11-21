@@ -9,6 +9,10 @@ export default tseslint.config(
     languageOptions: {
       parser: tseslint.parser,
     },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
+    },
   },
   {
     ignores: ['dist/', 'node_modules/'],

@@ -18,6 +18,9 @@ interface VigieauCardEditorConfig {
   show_alert_level?: boolean;
   show_restrictions?: boolean;
   show_progress?: boolean;
+  show_last_updated?: boolean;
+  compact?: boolean;
+  hide_no_restriction?: boolean;
 }
 
 /**
@@ -35,6 +38,9 @@ export class VigieauCardEditor extends LitElement {
     show_alert_level: true,
     show_restrictions: true,
     show_progress: false,
+    show_last_updated: false,
+    compact: false,
+    hide_no_restriction: false,
   };
 
   /**
@@ -51,6 +57,9 @@ export class VigieauCardEditor extends LitElement {
       show_alert_level: true,
       show_restrictions: true,
       show_progress: false,
+      show_last_updated: false,
+      compact: false,
+      hide_no_restriction: false,
     };
   }
 
@@ -181,6 +190,33 @@ export class VigieauCardEditor extends LitElement {
           }}
         >
           ${isFr ? 'Afficher la barre de progression' : 'Show progress bar'}
+        </ha-switch>
+
+        <ha-switch
+          .checked=${this._config.show_last_updated}
+          @change=${(e: Event) => {
+            this._config.show_last_updated = (e.target as HTMLInputElement).checked;
+          }}
+        >
+          ${isFr ? 'Afficher l\'horodatage' : 'Show last updated'}
+        </ha-switch>
+
+        <ha-switch
+          .checked=${this._config.compact}
+          @change=${(e: Event) => {
+            this._config.compact = (e.target as HTMLInputElement).checked;
+          }}
+        >
+          ${isFr ? 'Taille compacte' : 'Compact size'}
+        </ha-switch>
+
+        <ha-switch
+          .checked=${this._config.hide_no_restriction}
+          @change=${(e: Event) => {
+            this._config.hide_no_restriction = (e.target as HTMLInputElement).checked;
+          }}
+        >
+          ${isFr ? 'Masquer sans restriction' : 'Hide no restriction'}
         </ha-switch>
       </ha-settings>
     `;

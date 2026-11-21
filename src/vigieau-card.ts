@@ -29,6 +29,12 @@ interface VigieauCardConfig {
   show_restrictions?: boolean;
   /** Show the numeric progress bar */
   show_progress?: boolean;
+  /** Show the last updated timestamp of the alert level entity */
+  show_last_updated?: boolean;
+  /** Compact card size (reduced padding and font sizes) */
+  compact?: boolean;
+  /** Hide restriction categories with no active restriction */
+  hide_no_restriction?: boolean;
 }
 
 /** Restriction categories known by the vigieau integration, used to auto-build entity ids from a city code. */
@@ -76,6 +82,83 @@ const RESTRICTION_COLORS: Record<string, string> = {
 };
 
 /**
+ * Get the color for a restriction level
+ * @param level - The restriction level string
+ * @returns The color name or 'grey' if not found or unavailable
+ */
+export function getRestrictionColor(level: string | null): string {
+  if (!level) return 'grey';
+  const lowerLevel = level.toLowerCase().trim();
+  // États Home Assistant indisponibles / inconnus
+  if (lowerLevel === 'unavailable' || lowerLevel === 'unknown') return 'grey';
+  return RESTRICTION_COLORS[lowerLevel] || 'grey';
+}
+
+/**
+ * Get display name for a restriction category using localized strings
+ * @param category - The category key
+ * @param lang - The language code
+ * @returns The display name string
+ */
+export function getCategoryDisplayName(category: string, lang: string): string {
+  const translated = localizeCommon(`categorie.${category}`, lang);
+  if (translated !== `categorie.${category}`) {
+    return translated;
+  }
+  // Fallback : remplacer les underscores par des espaces
+  return category.replace(/_/g, ' ');
+}
+
+/**
+ * Get the icon for a restriction category
+ * @param category - The category key
+ * @returns An mdi icon name
+ */
+export function getCategoryIcon(category: string): string {
+  const icons: Record<string, string> = {
+    // French category names from the vigieau component
+    alimentation_des_fontaines: 'mdi:fountain',
+    jardins_potagers: 'mdi:flower',
+    pelouses: 'mdi:grass',
+    lavage_des_vehicules: 'mdi:car-wash',
+    piscines: 'mdi:pool',
+    voiries_trottoirs: 'mdi:road',
+    toitures_facades: 'mdi:roof',
+    plans_deau: 'mdi:water',
+    // English aliases (fallback)
+    fountains: 'mdi:fountain',
+    gardens: 'mdi:flower',
+    lawns: 'mdi:grass',
+    vehicle_wash: 'mdi:car-wash',
+    pools: 'mdi:pool',
+    roads: 'mdi:road',
+    roofs: 'mdi:roof',
+    ponds: 'mdi:water',
+  };
+  return icons[category] || 'mdi:water';
+}
+
+/**
+ * Build entity ids from a city code (INSEE code).
+ * @param cityCode - The INSEE city code (e.g. 35322)
+ * @returns Object with alert level, numeric alert level and restriction entity ids
+ */
+export function buildEntityIdsFromCityCode(cityCode: string): {
+  alert_level_entity: string;
+  alert_level_numeric_entity: string;
+  restriction_entities: string[];
+} {
+  const slug = cityCode.toLowerCase().trim();
+  return {
+    alert_level_entity: `sensor.alert_level_in_${slug}`,
+    alert_level_numeric_entity: `sensor.alert_level_numeric_${slug}`,
+    restriction_entities: RESTRICTION_CATEGORIES.map(
+      (cat) => `sensor.${cat}_restrictions_${slug}`
+    ),
+  };
+}
+
+/**
  * Custom Lovelace card for Vigieau water restrictions
  */
 @customElement('vigieau-card')
@@ -107,26 +190,9 @@ export class VigieauCard extends LitElement {
       show_alert_level: true,
       show_restrictions: true,
       show_progress: false,
-    };
-  }
-
-  /**
-   * Build entity ids from a city code (INSEE code).
-   * @param cityCode - The INSEE city code (e.g. 35322)
-   * @returns Object with alert level, numeric alert level and restriction entity ids
-   */
-  private _buildEntityIdsFromCityCode(cityCode: string): {
-    alert_level_entity: string;
-    alert_level_numeric_entity: string;
-    restriction_entities: string[];
-  } {
-    const slug = cityCode.toLowerCase().trim();
-    return {
-      alert_level_entity: `sensor.alert_level_in_${slug}`,
-      alert_level_numeric_entity: `sensor.alert_level_numeric_${slug}`,
-      restriction_entities: RESTRICTION_CATEGORIES.map(
-        (cat) => `sensor.${cat}_restrictions_${slug}`
-      ),
+      show_last_updated: false,
+      compact: false,
+      hide_no_restriction: false,
     };
   }
 
@@ -147,9 +213,9 @@ export class VigieauCard extends LitElement {
    */
   public setConfig(config: VigieauCardConfig): void {
     // If a city code is provided but no entities are set manually, auto-build entity ids from it
-    let resolvedConfig = { ...config };
+    const resolvedConfig = { ...config };
     if (config.city_code && config.city_code.trim()) {
-      const built = this._buildEntityIdsFromCityCode(config.city_code);
+      const built = buildEntityIdsFromCityCode(config.city_code);
       if (!config.alert_level_entity) {
         resolvedConfig.alert_level_entity = built.alert_level_entity;
       }
@@ -165,6 +231,9 @@ export class VigieauCard extends LitElement {
       show_alert_level: true,
       show_restrictions: true,
       show_progress: false,
+      show_last_updated: false,
+      compact: false,
+      hide_no_restriction: false,
       ...resolvedConfig,
     };
 
@@ -259,16 +328,14 @@ export class VigieauCard extends LitElement {
    * @returns The color name or 'grey' if not found
    */
   private _getRestrictionColor(level: string | null): string {
-    if (!level) return 'grey';
-    const lowerLevel = level.toLowerCase().trim();
-    return RESTRICTION_COLORS[lowerLevel] || 'grey';
+    return getRestrictionColor(level);
   }
 
-  /**
-   * Get the color from the entity attributes (Couleur attribute from vigieau)
-   * @param attributes - The entity attributes
-   * @returns The color or null if not found
-   */
+/**
+ * Get the color from the entity attributes (Couleur attribute from vigieau)
+ * @param attributes - The entity attributes
+ * @returns The color or null if not found
+ */
   private _getColorFromAttributes(attributes: Record<string, unknown>): string | null {
     const couleur = attributes['Couleur'];
     if (couleur && typeof couleur === 'string') return couleur;
@@ -342,49 +409,7 @@ export class VigieauCard extends LitElement {
    * @returns The display name string
    */
   private _getCategoryDisplayName(category: string, lang: string): string {
-    const translations: Record<string, Record<string, string>> = {
-      en: {
-        fountains: 'Fountains',
-        gardens: 'Gardens',
-        lawns: 'Lawns',
-        vehicle_wash: 'Vehicle Wash',
-        pools: 'Pools',
-        roads: 'Roads',
-        roofs: 'Roofs',
-        ponds: 'Ponds',
-        // French category names from the vigieau component (fallback English)
-        alimentation_des_fontaines: 'Fountains',
-        jardins_potagers: 'Vegetable gardens',
-        pelouses: 'Lawns',
-        lavage_des_vehicules: 'Vehicle Wash',
-        piscines: 'Pools',
-        voiries_trottoirs: 'Roads and sidewalks',
-        toitures_facades: 'Roofs and facades',
-        plans_deau: 'Ponds',
-      },
-      fr: {
-        fountains: 'Fontaines',
-        gardens: 'Jardins',
-        lawns: 'Pelouses',
-        vehicle_wash: 'Lavage véhicules',
-        pools: 'Piscines',
-        roads: 'Routes',
-        roofs: 'Toits',
-        ponds: 'Étangs',
-        // French category names from the vigieau component
-        alimentation_des_fontaines: 'Alimentation des fontaines',
-        jardins_potagers: 'Jardins potagers',
-        pelouses: 'Pelouses',
-        lavage_des_vehicules: 'Lavage des véhicules',
-        piscines: 'Piscines',
-        voiries_trottoirs: 'Voiries et trottoirs',
-        toitures_facades: 'Toitures et façades',
-        plans_deau: 'Plans d\'eau',
-      },
-    };
-
-    const i18n = translations[lang] || translations.fr;
-    return i18n[category] || category.replace(/_/g, ' ');
+    return getCategoryDisplayName(category, lang);
   }
 
   /**
@@ -393,27 +418,7 @@ export class VigieauCard extends LitElement {
    * @returns An mdi icon name
    */
   private _getCategoryIcon(category: string): string {
-    const icons: Record<string, string> = {
-      // French category names from the vigieau component
-      alimentation_des_fontaines: 'mdi:fountain',
-      jardins_potagers: 'mdi:flower',
-      pelouses: 'mdi:grass',
-      lavage_des_vehicules: 'mdi:car-wash',
-      piscines: 'mdi:pool',
-      voiries_trottoirs: 'mdi:road',
-      toitures_facades: 'mdi:roof',
-      plans_deau: 'mdi:water',
-      // English aliases (fallback)
-      fountains: 'mdi:fountain',
-      gardens: 'mdi:flower',
-      lawns: 'mdi:grass',
-      vehicle_wash: 'mdi:car-wash',
-      pools: 'mdi:pool',
-      roads: 'mdi:road',
-      roofs: 'mdi:roof',
-      ponds: 'mdi:water',
-    };
-    return icons[category] || 'mdi:water';
+    return getCategoryIcon(category);
   }
 
   /**
@@ -437,8 +442,14 @@ export class VigieauCard extends LitElement {
     // Get color for the alert level
     const color = this._getRestrictionColor(alertLevel);
 
-    let alertText = localizeCommon('unknown', lang);
-    if (alertLevel) {
+    let alertText: string;
+    if (!alertLevel) {
+      alertText = localizeCommon('unknown', lang);
+    } else if (alertLevel === 'unavailable') {
+      alertText = localizeCommon('entity_unavailable', lang);
+    } else if (alertLevel === 'unknown') {
+      alertText = localizeCommon('entity_unknown', lang);
+    } else {
       alertText = this._getDisplayLevel(alertLevel);
     }
 
@@ -456,13 +467,38 @@ export class VigieauCard extends LitElement {
 
     const alertEntityId = this._config.alert_level_entity;
 
+    // Last updated timestamp
+    let lastUpdatedHtml: TemplateResult = html``;
+    if (this._config.show_last_updated && alertLevel) {
+      const entity = this._getState(this._config.alert_level_entity ?? null);
+      const lastUpdated = entity?.last_updated;
+      if (lastUpdated) {
+        lastUpdatedHtml = html`
+          <span class="last-updated" aria-label="${localizeCommon('last_updated', lang)}: ${lastUpdated}">
+            ${localizeCommon('last_updated_short', lang)}: ${new Date(lastUpdated).toLocaleString(
+              lang,
+              { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+            )}
+          </span>
+        `;
+      }
+    }
+
     return html`
       <div class="card-header">
-        <div class="alert-level ${color}" @click=${() => this._showMoreInfo(alertEntityId ?? null)}>
+        <div
+          class="alert-level ${color}"
+          role="button"
+          tabindex="0"
+          aria-label="${alertText}"
+          @click=${() => this._showMoreInfo(alertEntityId ?? null)}
+          @keydown=${(e: KeyboardEvent) => this._handleCardKeyDown(e, alertEntityId ?? null)}
+        >
           <ha-icon icon="mdi:alert-circle" style="color: ${color};"></ha-icon>
           <span>${alertText}</span>
         </div>
         ${progressHtml}
+        ${lastUpdatedHtml}
       </div>
     `;
   }
@@ -483,8 +519,21 @@ export class VigieauCard extends LitElement {
       `;
     }
 
+    // Filter out categories with no active restriction if configured
+    const restrictedEntries = this._config.hide_no_restriction
+      ? Array.from(restrictions.entries()).filter(([, info]) => !this._isNoRestriction(info.state))
+      : Array.from(restrictions.entries());
+
+    if (restrictedEntries.length === 0) {
+      return html`
+        <div class="restrictions-grid">
+          <span>${localizeCommon('no_active_restrictions', lang)}</span>
+        </div>
+      `;
+    }
+
     // Build grid HTML from restrictions map
-    const gridItems = Array.from(restrictions.entries()).map(([_entityId, info]) => {
+    const gridItems = restrictedEntries.map(([, info]) => {
       const { state, entity_id, attributes, category } = info;
       const colorAttr = this._getColorFromAttributes(attributes);
       const color = colorAttr || this._getRestrictionColor(state);
@@ -509,10 +558,30 @@ export class VigieauCard extends LitElement {
         : this._getCategoryIcon(category);
 
       // Restriction level text (lowercase -> capitalize)
-      const levelText = this._getDisplayLevel(state);
+      let levelText: string;
+      if (!state) {
+        levelText = localizeCommon('unknown', lang);
+      } else if (state === 'unavailable') {
+        levelText = localizeCommon('entity_unavailable', lang);
+      } else if (state === 'unknown') {
+        levelText = localizeCommon('entity_unknown', lang);
+      } else {
+        levelText = this._getDisplayLevel(state);
+      }
+
+      const ariaLabel = `${displayName}: ${levelText}`;
 
       return html`
-        <div class="restriction-item ${isBinary ? 'binary' : ''}" title="${title}" @click=${() => this._showMoreInfo(entity_id)} style="border-color: ${color};">
+        <div
+          class="restriction-item ${this._config.compact ? 'compact' : ''} ${isBinary ? 'binary' : ''}"
+          role="button"
+          tabindex="0"
+          aria-label="${ariaLabel}"
+          title="${title}"
+          @click=${() => this._showMoreInfo(entity_id)}
+          @keydown=${(e: KeyboardEvent) => this._handleCardKeyDown(e, entity_id)}
+          style="border-color: ${color};"
+        >
           <ha-icon icon="${icon}" style="color: ${color};"></ha-icon>
           <div class="restriction-content">
             <span class="restriction-name">${displayName}</span>
@@ -523,7 +592,7 @@ export class VigieauCard extends LitElement {
     });
 
     return html`
-      <div class="restrictions-grid">
+      <div class="restrictions-grid ${this._config.compact ? 'compact' : ''}">
         ${gridItems}
       </div>
     `;
@@ -559,6 +628,29 @@ export class VigieauCard extends LitElement {
   }
 
   /**
+   * Check if a restriction state means "no restriction"
+   * @param state - The restriction state string
+   * @returns True if the state indicates no active restriction
+   */
+  private _isNoRestriction(state: string | null): boolean {
+    if (!state) return true;
+    const lower = state.toLowerCase().trim();
+    return lower === 'aucune restriction' || lower === 'vigilance' || lower === 'aucune';
+  }
+
+  /**
+   * Handle keyboard events on clickable card elements (Enter / Space).
+   * @param event - The keyboard event
+   * @param entityId - The entity ID to show more info for
+   */
+  private _handleCardKeyDown(event: KeyboardEvent, entityId: string | null): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this._showMoreInfo(entityId);
+    }
+  }
+
+  /**
    * Render the complete card
    * Combines all sections based on configuration
    * @returns Template result for the entire card
@@ -580,7 +672,7 @@ export class VigieauCard extends LitElement {
     }
 
     return html`
-      <ha-card>
+      <ha-card class="${this._config.compact ? 'compact' : ''}">
         ${this._config.show_alert_level && hasAlert ? this._renderHeader() : ''}
         ${this._config.show_restrictions && hasRestrictions ? this._renderRestrictions() : ''}
       </ha-card>
@@ -714,6 +806,65 @@ export class VigieauCard extends LitElement {
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+      }
+
+      /* Accessibility: focus visible for keyboard navigation */
+      .alert-level[role="button"]:focus-visible,
+      .restriction-item[role="button"]:focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+      }
+
+      .alert-level[role="button"],
+      .restriction-item[role="button"] {
+        outline: none;
+      }
+
+      /* Last updated timestamp */
+      .last-updated {
+        font-size: 0.75em;
+        color: var(--secondary-text-color);
+        margin-left: auto;
+        white-space: nowrap;
+      }
+
+      /* Compact mode */
+      ha-card.compact {
+        padding: 8px;
+      }
+
+      ha-card.compact .card-header {
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+      }
+
+      ha-card.compact .alert-level span {
+        font-size: 1em;
+      }
+
+      .restrictions-grid.compact {
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .restriction-item.compact {
+        padding: 6px;
+        min-height: 60px;
+        gap: 6px;
+      }
+
+      .restriction-item.compact ha-icon {
+        width: 16px;
+        height: 16px;
+      }
+
+      .restriction-item.compact .restriction-name {
+        font-size: 0.75em;
+        max-width: 100px;
+      }
+
+      .restriction-item.compact .restriction-level {
+        font-size: 0.65em;
       }
 
       .config-missing {

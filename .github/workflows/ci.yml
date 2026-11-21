@@ -31,6 +31,9 @@ jobs:
     - name: Run ESLint
       run: npm run lint
 
+    - name: Run tests
+      run: npm test
+
     - name: Build project
       run: npm run build
 
@@ -103,10 +106,10 @@ jobs:
         echo "Checking translation completeness..."
 
         # Get all keys from en.json
-        EN_KEYS=$(jq -r 'paths(scalars) | join(".")' src/localize.common.json 2>/dev/null | sort || echo "[]")
+        EN_KEYS=$(jq -r 'paths(scalars) | join(".")' src/en.json 2>/dev/null | sort || echo "[]")
 
-        for file in src/localize*.json; do
-          if [ "$file" != "src/localize.common.json" ]; then
+        for file in src/*.json; do
+          if [ "$file" != "src/en.json" ]; then
             echo "Checking $file against en.json..."
             LANG_KEYS=$(jq -r 'paths(scalars) | join(".")' "$file" | sort)
 

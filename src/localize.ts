@@ -2,8 +2,8 @@
  * Translation functions for the Vigieau Card
  */
 
-import EN_TRANSLATIONS from './localize.common.json';
-import FR_TRANSLATIONS from './localize.fr.json';
+import EN_TRANSLATIONS from './en.json';
+import FR_TRANSLATIONS from './fr.json';
 
 const TRANSLATIONS: Record<string, Record<string, string>> = {
   en: EN_TRANSLATIONS,

@@ -1,0 +1,14 @@
+# Référents du projet vigieau-card
+
+# Propriétaire du dépôt
+*       @kamaradclimber
+
+# Révisions spécifiques
+src/vigieau-card.ts      @kamaradclimber
+src/vigieau-card-editor.ts   @kamaradclimber
+src/localize.ts          @kamaradclimber
+src/fr.json              @kamaradclimber
+src/en.json              @kamaradclimber
+
+.github/workflows/       @kamaradclimber
+package.json             @kamaradclimber
