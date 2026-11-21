@@ -359,24 +359,35 @@ export class VigieauCard extends LitElement {
     for (const entityId of restrictionEntities) {
       const state = this._getState(entityId);
       if (state) {
-        // Extract the category name from the entity ID for display purposes
-        // sensor.{categorie}_restrictions_{ville}  -> categorie
-        // binary_sensor.vigieau-{categorie}-...   -> categorie (after vigieau-)
-        let category = '';
-        const sensorMatch = entityId.match(/^sensor\.(.+)_restrictions_/);
-        if (sensorMatch) {
-          category = sensorMatch[1];
-        } else {
-          const binaryMatch = entityId.match(/^binary_sensor\.vigieau-(.+)-/);
-          if (binaryMatch) {
-            category = binaryMatch[1];
+        // Extract the category name for display purposes.
+        // Prefer the entity attribute (if the vigieau integration exposes it),
+        // then fall back to parsing the entity_id.
+        const catAttr = state.attributes;
+        let category: string = '';
+        if (catAttr && catAttr.categorie !== undefined) {
+          category = catAttr.categorie as string;
+        } else if (catAttr && catAttr.category !== undefined) {
+          category = catAttr.category as string;
+        }
+        if (!category) {
+          const sensorMatch = entityId.match(/^sensor\.(.+)_restrictions_/);
+          if (sensorMatch) {
+            category = sensorMatch[1];
           } else {
-            // Fallback: use the part after the domain and before the last _restrictions or suffix
-            const parts = entityId.split('.');
-            if (parts.length > 1) {
-              category = parts[1].replace(/_restrictions.*$/, '');
+            const binaryMatch = entityId.match(/^binary_sensor\.vigieau-(.+)-/);
+            if (binaryMatch) {
+              category = binaryMatch[1];
+            } else {
+              // Fallback: use the part after the domain and before the last _restrictions or suffix
+              const parts = entityId.split('.');
+              if (parts.length > 1) {
+                category = parts[1].replace(/_restrictions.*$/, '');
+              }
             }
           }
+        }
+        if (!category) {
+          console.warn(`[vigieau-card] Unable to extract category for entity ${entityId}`);
         }
         this._entities.restrictions.set(entityId, {
           state: state.state,
@@ -520,9 +531,13 @@ export class VigieauCard extends LitElement {
     }
 
     // Filter out categories with no active restriction if configured
-    const restrictedEntries = this._config.hide_no_restriction
-      ? Array.from(restrictions.entries()).filter(([, info]) => !this._isNoRestriction(info.state))
-      : Array.from(restrictions.entries());
+    let restrictedEntries = Array.from(restrictions.entries());
+    if (this._config.hide_no_restriction) {
+      restrictedEntries = restrictedEntries.filter((entry) => {
+        const info = entry[1];
+        return !this._isNoRestriction(info.state);
+      });
+    }
 
     if (restrictedEntries.length === 0) {
       return html`
@@ -635,7 +650,14 @@ export class VigieauCard extends LitElement {
   private _isNoRestriction(state: string | null): boolean {
     if (!state) return true;
     const lower = state.toLowerCase().trim();
-    return lower === 'aucune restriction' || lower === 'vigilance' || lower === 'aucune';
+    return (
+      lower === 'aucune restriction' ||
+      lower === 'vigilance' ||
+      lower === 'aucune' ||
+      lower === 'normale' ||
+      lower === 'aucun' ||
+      lower === 'rien'
+    );
   }
 
   /**
