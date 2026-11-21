@@ -220,7 +220,7 @@ export class VigieauCard extends LitElement {
       }
 
       // Check if restriction entities changed
-      const restrictionEntities = this._getRestrictionEntities();
+      const restrictionEntities = this._getAllRestrictionEntities();
       return restrictionEntities.some((entityId: string) => {
         return oldHass.states[entityId]?.state !== this.hass.states[entityId]?.state;
       });
@@ -246,6 +246,40 @@ export class VigieauCard extends LitElement {
    */
   private _getRestrictionEntities(): string[] {
     return this._config.restriction_entities || [];
+  }
+
+  /**
+   * Découvre automatiquement toutes les entités de restrictions correspondant
+   * au pattern sensor.*_restrictions_{slug} dans l'état de Home Assistant.
+   * Cela permet de prendre en charge les entités nommées par l'intégration vigieau
+   * sans nécessiter de configuration manuelle de chaque entité.
+   * @param slug - Le slug de la ville (ex: thorigne_fouillard)
+   * @returns Liste des entity_ids découverts
+   */
+  private _discoverRestrictionEntities(slug: string): string[] {
+    if (!this.hass || !slug) return [];
+    const suffix = `_restrictions_${slug.toLowerCase().trim()}`;
+    return Object.keys(this.hass.states).filter(
+      (entityId) =>
+        entityId.startsWith('sensor.') && entityId.endsWith(suffix)
+    );
+  }
+
+  /**
+   * Get all restriction entity ids: configured ones plus auto-discovered ones.
+   * @returns Array of entity IDs (deduplicated)
+   */
+  private _getAllRestrictionEntities(): string[] {
+    const configured = this._getRestrictionEntities();
+    const slug = this._config.city_code ?? '';
+    const discovered = this._discoverRestrictionEntities(slug);
+    const all = [...configured];
+    for (const id of discovered) {
+      if (!all.includes(id)) {
+        all.push(id);
+      }
+    }
+    return all;
   }
 
   /**
@@ -279,6 +313,15 @@ export class VigieauCard extends LitElement {
    * @returns The category key or empty string if it cannot be extracted
    */
   private _extractCategoryFromEntityId(entityId: string): string {
+    // Pattern vigieau complet :
+    // sensor.vigieau_{slug}_eaux_de_surface_{categorie}_restrictions_{slug}
+    const vigieauMatch = entityId.match(
+      /^sensor\.vigieau_.+?_eaux_de_surface_(.+)_restrictions_/
+    );
+    if (vigieauMatch) {
+      return vigieauMatch[1];
+    }
+    // Pattern standard : sensor.{categorie}_restrictions_{slug}
     const sensorMatch = entityId.match(/^sensor\.(.+)_restrictions_/);
     if (sensorMatch) {
       return sensorMatch[1];
@@ -319,7 +362,7 @@ export class VigieauCard extends LitElement {
     // Update restriction entities
     // Index by entity_id (unique) instead of category to avoid collisions between cities
     this._entities.restrictions.clear();
-    const restrictionEntities = this._getRestrictionEntities();
+    const restrictionEntities = this._getAllRestrictionEntities();
     for (const entityId of restrictionEntities) {
       const state = this._getState(entityId);
       let category = '';
