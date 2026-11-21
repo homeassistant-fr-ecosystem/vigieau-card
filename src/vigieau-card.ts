@@ -85,7 +85,7 @@ export class VigieauCard extends LitElement {
   @state() private _entities: {
     alert_level: string | null;
     alert_level_numeric: string | null;
-    restrictions: Map<string, { state: string; entity_id: string; attributes: Record<string, unknown> }>;
+    restrictions: Map<string, { state: string; entity_id: string; attributes: Record<string, unknown>; category: string }>;
   } = {
     alert_level: null,
     alert_level_numeric: null,
@@ -286,12 +286,13 @@ export class VigieauCard extends LitElement {
     this._entities.alert_level_numeric = this._getState(this._config.alert_level_numeric_entity ?? null)?.state || null;
 
     // Update restriction entities
+    // Index by entity_id (unique) instead of category to avoid collisions between cities
     this._entities.restrictions.clear();
     const restrictionEntities = this._getRestrictionEntities();
     for (const entityId of restrictionEntities) {
       const state = this._getState(entityId);
       if (state) {
-        // Extract the category name from the entity ID:
+        // Extract the category name from the entity ID for display purposes
         // sensor.{categorie}_restrictions_{ville}  -> categorie
         // binary_sensor.vigieau-{categorie}-...   -> categorie (after vigieau-)
         let category = '';
@@ -310,10 +311,11 @@ export class VigieauCard extends LitElement {
             }
           }
         }
-        this._entities.restrictions.set(category, {
+        this._entities.restrictions.set(entityId, {
           state: state.state,
           entity_id: state.entity_id,
           attributes: state.attributes,
+          category,
         });
       }
     }
@@ -482,8 +484,8 @@ export class VigieauCard extends LitElement {
     }
 
     // Build grid HTML from restrictions map
-    const gridItems = Array.from(restrictions.entries()).map(([category, info]) => {
-      const { state, entity_id, attributes } = info;
+    const gridItems = Array.from(restrictions.entries()).map(([_entityId, info]) => {
+      const { state, entity_id, attributes, category } = info;
       const colorAttr = this._getColorFromAttributes(attributes);
       const color = colorAttr || this._getRestrictionColor(state);
       const displayName = this._getCategoryDisplayName(category, lang);
