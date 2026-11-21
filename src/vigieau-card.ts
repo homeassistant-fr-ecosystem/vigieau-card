@@ -15,6 +15,8 @@ import { localizeCommon } from './localize';
  */
 interface VigieauCardConfig {
   type: string;
+  /** INSEE city code (e.g. 35322 for Thorigne-Fouillard). Used to auto-build entity ids when not set manually. */
+  city_code?: string;
   /** Entity id of the alert level sensor (e.g. sensor.alert_level_in_thorigne_fouillard) */
   alert_level_entity?: string;
   /** Entity id of the numeric alert level sensor (e.g. sensor.alert_level_numeric_thorigne_fouillard) */
@@ -28,6 +30,18 @@ interface VigieauCardConfig {
   /** Show the numeric progress bar */
   show_progress?: boolean;
 }
+
+/** Restriction categories known by the vigieau integration, used to auto-build entity ids from a city code. */
+const RESTRICTION_CATEGORIES: string[] = [
+  'alimentation_des_fontaines',
+  'jardins_potagers',
+  'pelouses',
+  'lavage_des_vehicules',
+  'piscines',
+  'voiries_trottoirs',
+  'toitures_facades',
+  'plans_deau',
+];
 
 /**
  * Entity state interfaces
@@ -86,12 +100,33 @@ export class VigieauCard extends LitElement {
   public static getStubConfig(): VigieauCardConfig {
     return {
       type: 'custom:vigieau-card',
+      city_code: '',
       alert_level_entity: '',
       alert_level_numeric_entity: '',
       restriction_entities: [],
       show_alert_level: true,
       show_restrictions: true,
       show_progress: false,
+    };
+  }
+
+  /**
+   * Build entity ids from a city code (INSEE code).
+   * @param cityCode - The INSEE city code (e.g. 35322)
+   * @returns Object with alert level, numeric alert level and restriction entity ids
+   */
+  private _buildEntityIdsFromCityCode(cityCode: string): {
+    alert_level_entity: string;
+    alert_level_numeric_entity: string;
+    restriction_entities: string[];
+  } {
+    const slug = cityCode.toLowerCase().trim();
+    return {
+      alert_level_entity: `sensor.alert_level_in_${slug}`,
+      alert_level_numeric_entity: `sensor.alert_level_numeric_${slug}`,
+      restriction_entities: RESTRICTION_CATEGORIES.map(
+        (cat) => `sensor.${cat}_restrictions_${slug}`
+      ),
     };
   }
 
@@ -111,11 +146,26 @@ export class VigieauCard extends LitElement {
    * @param config - The card configuration object
    */
   public setConfig(config: VigieauCardConfig): void {
+    // If a city code is provided but no entities are set manually, auto-build entity ids from it
+    let resolvedConfig = { ...config };
+    if (config.city_code && config.city_code.trim()) {
+      const built = this._buildEntityIdsFromCityCode(config.city_code);
+      if (!config.alert_level_entity) {
+        resolvedConfig.alert_level_entity = built.alert_level_entity;
+      }
+      if (!config.alert_level_numeric_entity) {
+        resolvedConfig.alert_level_numeric_entity = built.alert_level_numeric_entity;
+      }
+      if (!config.restriction_entities || config.restriction_entities.length === 0) {
+        resolvedConfig.restriction_entities = built.restriction_entities;
+      }
+    }
+
     this._config = {
       show_alert_level: true,
       show_restrictions: true,
       show_progress: false,
-      ...config,
+      ...resolvedConfig,
     };
 
     this._updateEntities();
@@ -336,6 +386,35 @@ export class VigieauCard extends LitElement {
   }
 
   /**
+   * Get the icon for a restriction category
+   * @param category - The category key
+   * @returns An mdi icon name
+   */
+  private _getCategoryIcon(category: string): string {
+    const icons: Record<string, string> = {
+      // French category names from the vigieau component
+      alimentation_des_fontaines: 'mdi:fountain',
+      jardins_potagers: 'mdi:flower',
+      pelouses: 'mdi:grass',
+      lavage_des_vehicules: 'mdi:car-wash',
+      piscines: 'mdi:pool',
+      voiries_trottoirs: 'mdi:road',
+      toitures_facades: 'mdi:roof',
+      plans_deau: 'mdi:water',
+      // English aliases (fallback)
+      fountains: 'mdi:fountain',
+      gardens: 'mdi:flower',
+      lawns: 'mdi:grass',
+      vehicle_wash: 'mdi:car-wash',
+      pools: 'mdi:pool',
+      roads: 'mdi:road',
+      roofs: 'mdi:roof',
+      ponds: 'mdi:water',
+    };
+    return icons[category] || 'mdi:water';
+  }
+
+  /**
    * Check if an entity is a binary sensor
    * @param entityId - The entity ID
    * @returns True if the entity is a binary_sensor
@@ -361,9 +440,9 @@ export class VigieauCard extends LitElement {
       alertText = this._getDisplayLevel(alertLevel);
     }
 
-    // Progress bar if numeric level available
+    // Progress bar only if enabled and numeric level available
     let progressHtml: TemplateResult = html``;
-    if (alertLevelNumeric !== null && !isNaN(Number(alertLevelNumeric))) {
+    if (this._config.show_progress && alertLevelNumeric !== null && !isNaN(Number(alertLevelNumeric))) {
       const percent = Math.round((Number(alertLevelNumeric) / 4) * 100);
       progressHtml = html`
         <div class="progress-bar">
@@ -378,7 +457,7 @@ export class VigieauCard extends LitElement {
     return html`
       <div class="card-header">
         <div class="alert-level ${color}" @click=${() => this._showMoreInfo(alertEntityId ?? null)}>
-          <ha-icon icon="mdi:alert-circle"></ha-icon>
+          <ha-icon icon="mdi:alert-circle" style="color: ${color};"></ha-icon>
           <span>${alertText}</span>
         </div>
         ${progressHtml}
@@ -422,13 +501,21 @@ export class VigieauCard extends LitElement {
         title += ` - ${localizeCommon('next_restriction', lang)}: ${nextStart} / ${nextEnd}`;
       }
 
+      // Icon by category (or binary state)
+      const icon = isBinary
+        ? (state === 'on' ? 'mdi:water-off' : 'mdi:water-check')
+        : this._getCategoryIcon(category);
+
+      // Restriction level text (lowercase -> capitalize)
+      const levelText = this._getDisplayLevel(state);
+
       return html`
         <div class="restriction-item ${isBinary ? 'binary' : ''}" title="${title}" @click=${() => this._showMoreInfo(entity_id)} style="border-color: ${color};">
-          <ha-icon
-            icon="${isBinary ? (state === 'on' ? 'mdi:water-off' : 'mdi:water-check') : 'mdi:help-circle'}"
-            style="color: ${color}"
-          ></ha-icon>
-          <span>${displayName}</span>
+          <ha-icon icon="${icon}" style="color: ${color};"></ha-icon>
+          <div class="restriction-content">
+            <span class="restriction-name">${displayName}</span>
+            <span class="restriction-level" style="color: ${color};">${levelText}</span>
+          </div>
         </div>
       `;
     });
@@ -565,14 +652,14 @@ export class VigieauCard extends LitElement {
 
       .restrictions-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         gap: 12px;
         margin-top: 16px;
       }
 
       .restriction-item {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 8px;
         padding: 10px;
         background: var(--card-background-color);
@@ -580,9 +667,16 @@ export class VigieauCard extends LitElement {
         border: 2px solid var(--divider-color);
         cursor: pointer;
         transition: all 0.2s ease;
+        min-height: 80px;
       }
 
       .restriction-item:hover {
+        border-color: var(--primary-color);
+        background: var(--secondary-background-color);
+      }
+
+      .restriction-item:active {
+        transform: scale(0.98);
         border-color: var(--primary-color);
         background: var(--secondary-background-color);
       }
@@ -591,15 +685,33 @@ export class VigieauCard extends LitElement {
         width: 20px;
         height: 20px;
         flex-shrink: 0;
+        margin-top: 2px;
       }
 
-      .restriction-item span {
-        font-size: 0.9em;
+      .restriction-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .restriction-name {
+        font-size: 0.85em;
         color: var(--primary-text-color);
-        white-space: nowrap;
+        font-weight: 500;
+        white-space: normal;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 180px;
+        max-width: 150px;
+        line-height: 1.2;
+      }
+
+      .restriction-level {
+        font-size: 0.75em;
+        color: var(--secondary-text-color);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
 
       .config-missing {
@@ -619,7 +731,7 @@ export class VigieauCard extends LitElement {
 
       @media (max-width: 600px) {
         .restrictions-grid {
-          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         }
 
         .restriction-item {

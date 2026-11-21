@@ -11,6 +11,7 @@ import { HomeAssistant } from 'custom-card-helpers';
  */
 interface VigieauCardEditorConfig {
   type: string;
+  city_code?: string;
   alert_level_entity?: string;
   alert_level_numeric_entity?: string;
   restriction_entities?: string[];
@@ -27,6 +28,7 @@ export class VigieauCardEditor extends LitElement {
   @property() private hass!: HomeAssistant;
   @property() private _config: VigieauCardEditorConfig = {
     type: 'custom:vigieau-card',
+    city_code: '',
     alert_level_entity: '',
     alert_level_numeric_entity: '',
     restriction_entities: [],
@@ -42,6 +44,7 @@ export class VigieauCardEditor extends LitElement {
   public static getStubConfig(): VigieauCardEditorConfig {
     return {
       type: 'custom:vigieau-card',
+      city_code: '',
       alert_level_entity: '',
       alert_level_numeric_entity: '',
       restriction_entities: [],
@@ -79,6 +82,28 @@ export class VigieauCardEditor extends LitElement {
 
     return html`
       <ha-settings>
+        <!-- City code (INSEE) -->
+        <div style="margin-bottom: 16px;">
+          <div style="font-weight: 500; margin-bottom: 8px;">
+            ${isFr ? 'Code commune (INSEE)' : 'City code (INSEE)'}
+          </div>
+          <ha-textfield
+            .hass=${this.hass}
+            .label=${isFr ? 'Code commune' : 'City code'}
+            .value=${this._config.city_code || ''}
+            .helper=${isFr
+              ? 'Ex: 35322 pour Thorigné-Fouillard. Génère automatiquement les entités si elles ne sont pas saisies.'
+              : 'Ex: 35322 for Thorigne-Fouillard. Auto-generates entities when not set manually.'}
+            @value-changed=${(e: CustomEvent) => {
+              this._config.city_code = (e.target as HTMLInputElement).value;
+              this.requestUpdate();
+            }}
+          ></ha-textfield>
+          <div style="font-size: 0.8em; color: var(--secondary-text-color); margin-top: 4px;">
+            ${isFr ? 'Laissez vide pour sélectionner les entités manuellement.' : 'Leave empty to select entities manually.'}
+          </div>
+        </div>
+
         <!-- Alert level entity -->
         <div>
           <div style="font-weight: 500; margin-bottom: 8px;">
