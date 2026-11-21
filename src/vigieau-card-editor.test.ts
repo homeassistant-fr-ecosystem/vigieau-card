@@ -60,15 +60,13 @@ describe('VigieauCardEditor', () => {
 
       let received: VigieauCardEditorConfig | null = null;
       editor.addEventListener(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        'config-changed' as any,
-        ((e: CustomEvent) => {
-          received = e.detail.config as VigieauCardEditorConfig;
-        }) as EventListener
+        'config-changed',
+        (e: Event) => {
+          received = (e as CustomEvent).detail.config as VigieauCardEditorConfig;
+        }
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor as any)._notifyConfigChanged();
+      (editor as unknown as { _notifyConfigChanged: () => void })._notifyConfigChanged();
 
       expect(received).not.toBeNull();
       expect(received!.city_code).toBe('35322');
@@ -100,8 +98,7 @@ describe('VigieauCardEditor', () => {
         bubbles: true,
         composed: true,
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor as any)._handleCityCodeChanged(event);
+      (editor as unknown as { _handleCityCodeChanged: (e: CustomEvent | Event) => void })._handleCityCodeChanged(event);
 
       expect(editor.config.city_code).toBe('thorigne_fouillard');
       expect(editor.config.alert_level_entity).toBe('sensor.alert_level_in_thorigne_fouillard');
@@ -129,8 +126,7 @@ describe('VigieauCardEditor', () => {
         bubbles: true,
         composed: true,
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor as any)._handleCityCodeChanged(event);
+      (editor as unknown as { _handleCityCodeChanged: (e: CustomEvent | Event) => void })._handleCityCodeChanged(event);
 
       expect(editor.config.city_code).toBe('thorigne_fouillard');
       // Les entités saisies manuellement doivent être préservées, pas écrasées
@@ -151,8 +147,7 @@ describe('VigieauCardEditor', () => {
       Object.defineProperty(event, 'target', {
         value: { value: 'thorigne_fouillard' },
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor as any)._handleCityCodeChanged(event);
+      (editor as unknown as { _handleCityCodeChanged: (e: CustomEvent | Event) => void })._handleCityCodeChanged(event);
 
       expect(editor.config.city_code).toBe('thorigne_fouillard');
       expect(editor.config.alert_level_entity).toBe(
@@ -179,10 +174,10 @@ describe('VigieauCardEditor', () => {
 
       let received: VigieauCardEditorConfig | null = null;
       editor.addEventListener(
-        'config-changed' as any,
-        ((e: CustomEvent) => {
-          received = e.detail.config as VigieauCardEditorConfig;
-        }) as EventListener
+        'config-changed',
+        (e: Event) => {
+          received = (e as CustomEvent).detail.config as VigieauCardEditorConfig;
+        }
       );
 
       // Simule le changement de switch via le handler inline du template
@@ -190,10 +185,8 @@ describe('VigieauCardEditor', () => {
       Object.defineProperty(event, 'target', {
         value: { checked: false },
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ((editor as any)._config.show_alert_level = (event.target as any).checked);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor as any)._notifyConfigChanged();
+      (editor as unknown as { _config: { show_alert_level: boolean } })._config.show_alert_level = (event.target as HTMLInputElement).checked;
+      (editor as unknown as { _notifyConfigChanged: () => void })._notifyConfigChanged();
 
       expect(received).not.toBeNull();
       expect(received!.show_alert_level).toBe(false);
@@ -209,20 +202,18 @@ describe('VigieauCardEditor', () => {
 
       let received: VigieauCardEditorConfig | null = null;
       editor.addEventListener(
-        'config-changed' as any,
-        ((e: CustomEvent) => {
-          received = e.detail.config as VigieauCardEditorConfig;
-        }) as EventListener
+        'config-changed',
+        (e: Event) => {
+          received = (e as CustomEvent).detail.config as VigieauCardEditorConfig;
+        }
       );
 
       const event = new Event('change', { bubbles: true });
       Object.defineProperty(event, 'target', {
         value: { checked: false },
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ((editor as any)._config.show_restrictions = (event.target as any).checked);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor as any)._notifyConfigChanged();
+      (editor as unknown as { _config: { show_restrictions: boolean } })._config.show_restrictions = (event.target as HTMLInputElement).checked;
+      (editor as unknown as { _notifyConfigChanged: () => void })._notifyConfigChanged();
 
       expect(received).not.toBeNull();
       expect(received!.show_restrictions).toBe(false);
@@ -244,13 +235,12 @@ describe('VigieauCardEditor', () => {
 
       let received: VigieauCardEditorConfig | null = null;
       editor.addEventListener(
-        'config-changed' as any,
-        ((e: CustomEvent) => {
-          received = e.detail.config as VigieauCardEditorConfig;
-        }) as EventListener
+        'config-changed',
+        (e: Event) => {
+          received = (e as CustomEvent).detail.config as VigieauCardEditorConfig;
+        }
       );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor as any)._notifyConfigChanged();
+      (editor as unknown as { _notifyConfigChanged: () => void })._notifyConfigChanged();
 
       expect(received).not.toBeNull();
       expect(received!.show_progress).toBe(true);

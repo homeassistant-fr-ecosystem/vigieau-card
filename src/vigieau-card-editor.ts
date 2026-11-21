@@ -5,7 +5,10 @@
 import { html, css, LitElement, TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { HomeAssistant } from 'custom-card-helpers';
-import { buildEntityIdsFromCityCode } from './vigieau-card';
+import {
+  DEFAULT_CONFIG,
+  applyCityCodeToConfig,
+} from './config';
 
 /**
  * Configuration interface for the editor
@@ -22,6 +25,8 @@ export interface VigieauCardEditorConfig {
   show_last_updated?: boolean;
   compact?: boolean;
   hide_no_restriction?: boolean;
+  /** Tri des restrictions : 'config' (ordre config), 'alpha' (alphabétique), 'severity' (sévérité) */
+  sort?: 'config' | 'alpha' | 'severity';
 }
 
 /**
@@ -62,19 +67,7 @@ export class VigieauCardEditor extends LitElement {
    * @returns Default configuration object
    */
   public static getStubConfig(): VigieauCardEditorConfig {
-    return {
-      type: 'custom:vigieau-card',
-      city_code: '',
-      alert_level_entity: '',
-      alert_level_numeric_entity: '',
-      restriction_entities: [],
-      show_alert_level: true,
-      show_restrictions: true,
-      show_progress: false,
-      show_last_updated: false,
-      compact: false,
-      hide_no_restriction: false,
-    };
+    return { ...DEFAULT_CONFIG };
   }
 
   /**
@@ -105,21 +98,7 @@ export class VigieauCardEditor extends LitElement {
    */
   private _handleCityCodeChanged(e: CustomEvent | Event): void {
     const value = (e as CustomEvent).detail?.value ?? (e.target as HTMLInputElement).value;
-    this._config.city_code = value;
-    // Auto-générer les entités depuis le slug uniquement quand elles ne sont pas
-    // déjà renseignées manuellement, afin de préserver les sélections utilisateur.
-    if (value && value.trim()) {
-      const built = buildEntityIdsFromCityCode(value);
-      if (!this._config.alert_level_entity) {
-        this._config.alert_level_entity = built.alert_level_entity;
-      }
-      if (!this._config.alert_level_numeric_entity) {
-        this._config.alert_level_numeric_entity = built.alert_level_numeric_entity;
-      }
-      if (!this._config.restriction_entities || this._config.restriction_entities.length === 0) {
-        this._config.restriction_entities = built.restriction_entities;
-      }
-    }
+    this._config = applyCityCodeToConfig({ ...this._config, city_code: value }, value);
     this._notifyConfigChanged();
   }
 
