@@ -145,16 +145,15 @@ export class VigieauCardEditor extends LitElement {
           <div style="font-weight: 500; margin-bottom: 8px;">
             ${isFr ? 'Code ville / slug' : 'City code or slug'}
           </div>
-          <ha-textfield
-            .hass=${this.hass}
-            .label=${isFr ? 'Code ville / slug' : 'City code or slug'}
+          <input
+            type="text"
             .value=${this._config.city_code || ''}
-            .helper=${isFr
-              ? 'Ex: 35322 (code INSEE) ou thorigne_fouillard (slug). Génère automatiquement les entités si elles ne sont pas saisies.'
-              : 'Ex: 35322 (INSEE code) or thorigne_fouillard (slug). Auto-generates entities when not set manually.'}
-            @value-changed=${(e: CustomEvent) => this._handleCityCodeChanged(e)}
+            .placeholder=${isFr
+              ? 'Ex: 35322 ou thorigne_fouillard'
+              : 'Ex: 35322 or thorigne_fouillard'}
             @input=${(e: Event) => this._handleCityCodeChanged(e)}
-          ></ha-textfield>
+            style="width: 100%; padding: 8px; font-size: 1rem; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--input-background-color, var(--card-background-color)); color: var(--primary-text-color); box-sizing: border-box;"
+          ></input>
           <div style="font-size: 0.8em; color: var(--secondary-text-color); margin-top: 4px;">
             ${isFr ? 'Laissez vide pour sélectionner les entités manuellement.' : 'Leave empty to select entities manually.'}
           </div>
@@ -277,10 +276,11 @@ export class VigieauCardEditor extends LitElement {
 
   static get styles() {
     return css`
-      ha-textfield,
+      input[type="text"],
       ha-entity-picker {
         margin-bottom: 16px;
         display: block;
+        width: 100%;
       }
 
       ha-switch {
