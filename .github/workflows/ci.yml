@@ -91,7 +91,7 @@ jobs:
     - name: Validate translation files
       run: |
         # Check that all translation files are valid JSON
-        for file in src/localize*.json; do
+        for file in src/*.json; do
           echo "Validating $file..."
           if ! jq empty "$file" 2>/dev/null; then
             echo "❌ Invalid JSON in $file"
