@@ -46,14 +46,6 @@ jobs:
       - name: Tests
         run: npm test
 
-      - name: Build
-        run: npm run build
-
-      # HACS looks for an asset named after the repository ("vigieau-card.js"),
-      # so stage the built bundle at the workspace root before uploading it.
-      - name: Stage release asset
-        run: cp dist/vigieau-card.js vigieau-card.js
-
       # Mettre à jour la version dans package.json et committer avant de créer le tag,
       # comme le faisait précédemment semantic-release.
       - name: Update package.json version
@@ -68,6 +60,17 @@ jobs:
           git commit -m "chore(release): mettre à jour la version $VERSION"
           echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
           git push origin main
+
+      # Le build doit être exécuté après la mise à jour de version et le commit
+      # ("chore(release): mettre à jour la version X"), afin que le numéro de version
+      # soit bien embarqué dans le bundle généré (dist/vigieau-card.js).
+      - name: Build
+        run: npm run build
+
+      # HACS looks for an asset named after the repository ("vigieau-card.js"),
+      # so stage the built bundle at the workspace root before uploading it.
+      - name: Stage release asset
+        run: cp dist/vigieau-card.js vigieau-card.js
 
       - name: Create release
         uses: ncipollo/release-action@v1
