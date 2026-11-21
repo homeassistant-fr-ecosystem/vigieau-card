@@ -82,18 +82,18 @@ export class VigieauCardEditor extends LitElement {
 
     return html`
       <ha-settings>
-        <!-- City code (INSEE) -->
+        <!-- City code or slug -->
         <div style="margin-bottom: 16px;">
           <div style="font-weight: 500; margin-bottom: 8px;">
-            ${isFr ? 'Code commune (INSEE)' : 'City code (INSEE)'}
+            ${isFr ? 'Code ville / slug' : 'City code or slug'}
           </div>
           <ha-textfield
             .hass=${this.hass}
-            .label=${isFr ? 'Code commune' : 'City code'}
+            .label=${isFr ? 'Code ville / slug' : 'City code or slug'}
             .value=${this._config.city_code || ''}
             .helper=${isFr
-              ? 'Ex: 35322 pour Thorigné-Fouillard. Génère automatiquement les entités si elles ne sont pas saisies.'
-              : 'Ex: 35322 for Thorigne-Fouillard. Auto-generates entities when not set manually.'}
+              ? 'Ex: 35322 (code INSEE) ou thorigne_fouillard (slug). Génère automatiquement les entités si elles ne sont pas saisies.'
+              : 'Ex: 35322 (INSEE code) or thorigne_fouillard (slug). Auto-generates entities when not set manually.'}
             @value-changed=${(e: CustomEvent) => {
               this._config.city_code = (e.target as HTMLInputElement).value;
               this.requestUpdate();

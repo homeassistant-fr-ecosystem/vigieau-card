@@ -15,7 +15,7 @@ import { localizeCommon } from './localize';
  */
 interface VigieauCardConfig {
   type: string;
-  /** INSEE city code (e.g. 35322 for Thorigne-Fouillard). Used to auto-build entity ids when not set manually. */
+  /** City code or slug (e.g. 35322 INSEE code or thorigne_fouillard slug). Used to auto-build entity ids when not set manually. */
   city_code?: string;
   /** Entity id of the alert level sensor (e.g. sensor.alert_level_in_thorigne_fouillard) */
   alert_level_entity?: string;

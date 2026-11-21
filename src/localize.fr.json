@@ -1,5 +1,5 @@
 {
-  "city_code": "Code commune (INSEE)",
+  "city_code": "Code ville / slug",
   "unknown": "Inconnu",
   "no_data": "Aucune donnée",
   "configure_entities": "Veuillez configurer les entités dans l'éditeur de carte",
