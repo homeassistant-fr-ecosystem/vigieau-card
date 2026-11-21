@@ -106,7 +106,8 @@ export class VigieauCardEditor extends LitElement {
   private _handleCityCodeChanged(e: CustomEvent | Event): void {
     const value = (e as CustomEvent).detail?.value ?? (e.target as HTMLInputElement).value;
     this._config.city_code = value;
-    // Auto-générer les entités depuis le slug si non configurées manuellement
+    // Auto-générer les entités depuis le slug uniquement quand elles ne sont pas
+    // déjà renseignées manuellement, afin de préserver les sélections utilisateur.
     if (value && value.trim()) {
       const built = buildEntityIdsFromCityCode(value);
       if (!this._config.alert_level_entity) {

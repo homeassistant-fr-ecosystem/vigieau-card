@@ -86,5 +86,57 @@ describe('VigieauCardEditor', () => {
       );
       expect(built.restriction_entities.length).toBe(8);
     });
+
+    it('regénère les entités quand le code ville change (éditeur)', () => {
+      const editor = new VigieauCardEditor();
+      editor.setConfig({
+        type: 'custom:vigieau-card',
+        city_code: '35322',
+      } as VigieauCardEditorConfig);
+
+      // On simule un changement de ville dans le champ texte
+      const event = new CustomEvent('value-changed', {
+        detail: { value: 'thorigne_fouillard' },
+        bubbles: true,
+        composed: true,
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (editor as any)._handleCityCodeChanged(event);
+
+      expect(editor.config.city_code).toBe('thorigne_fouillard');
+      expect(editor.config.alert_level_entity).toBe('sensor.alert_level_in_thorigne_fouillard');
+      expect(editor.config.alert_level_numeric_entity).toBe(
+        'sensor.alert_level_numeric_thorigne_fouillard'
+      );
+      expect(editor.config.restriction_entities).toContain(
+        'sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard'
+      );
+    });
+
+    it('préserve les entités sélectionnées manuellement quand le code ville change', () => {
+      const editor = new VigieauCardEditor();
+      editor.setConfig({
+        type: 'custom:vigieau-card',
+        city_code: '35322',
+        alert_level_entity: 'sensor.custom_alert',
+        alert_level_numeric_entity: 'sensor.custom_numeric',
+        restriction_entities: ['sensor.custom_restriction'],
+      } as VigieauCardEditorConfig);
+
+      // On simule un changement de ville dans le champ texte
+      const event = new CustomEvent('value-changed', {
+        detail: { value: 'thorigne_fouillard' },
+        bubbles: true,
+        composed: true,
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (editor as any)._handleCityCodeChanged(event);
+
+      expect(editor.config.city_code).toBe('thorigne_fouillard');
+      // Les entités saisies manuellement doivent être préservées, pas écrasées
+      expect(editor.config.alert_level_entity).toBe('sensor.custom_alert');
+      expect(editor.config.alert_level_numeric_entity).toBe('sensor.custom_numeric');
+      expect(editor.config.restriction_entities).toEqual(['sensor.custom_restriction']);
+    });
   });
 });
