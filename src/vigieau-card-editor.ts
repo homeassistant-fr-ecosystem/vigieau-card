@@ -98,6 +98,31 @@ export class VigieauCardEditor extends LitElement {
   }
 
   /**
+   * Handle changes on the city code / slug textfield.
+   * Works with both 'value-changed' (ha-textfield) and 'input' (inner input) events.
+   * Auto-generates entity ids from the slug when entities are not set manually.
+   * @param event - The change event
+   */
+  private _handleCityCodeChanged(e: CustomEvent | Event): void {
+    const value = (e as CustomEvent).detail?.value ?? (e.target as HTMLInputElement).value;
+    this._config.city_code = value;
+    // Auto-générer les entités depuis le slug si non configurées manuellement
+    if (value && value.trim()) {
+      const built = buildEntityIdsFromCityCode(value);
+      if (!this._config.alert_level_entity) {
+        this._config.alert_level_entity = built.alert_level_entity;
+      }
+      if (!this._config.alert_level_numeric_entity) {
+        this._config.alert_level_numeric_entity = built.alert_level_numeric_entity;
+      }
+      if (!this._config.restriction_entities || this._config.restriction_entities.length === 0) {
+        this._config.restriction_entities = built.restriction_entities;
+      }
+    }
+    this._notifyConfigChanged();
+  }
+
+  /**
    * Get the card size for the editor
    * @returns Card height in grid rows
    */
@@ -126,24 +151,8 @@ export class VigieauCardEditor extends LitElement {
             .helper=${isFr
               ? 'Ex: 35322 (code INSEE) ou thorigne_fouillard (slug). Génère automatiquement les entités si elles ne sont pas saisies.'
               : 'Ex: 35322 (INSEE code) or thorigne_fouillard (slug). Auto-generates entities when not set manually.'}
-            @value-changed=${(e: CustomEvent) => {
-              const value = (e.target as HTMLInputElement).value;
-              this._config.city_code = value;
-              // Auto-générer les entités depuis le slug si non configurées manuellement
-              if (value && value.trim()) {
-                const built = buildEntityIdsFromCityCode(value);
-                if (!this._config.alert_level_entity) {
-                  this._config.alert_level_entity = built.alert_level_entity;
-                }
-                if (!this._config.alert_level_numeric_entity) {
-                  this._config.alert_level_numeric_entity = built.alert_level_numeric_entity;
-                }
-                if (!this._config.restriction_entities || this._config.restriction_entities.length === 0) {
-                  this._config.restriction_entities = built.restriction_entities;
-                }
-              }
-              this._notifyConfigChanged();
-            }}
+            @value-changed=${(e: CustomEvent) => this._handleCityCodeChanged(e)}
+            @input=${(e: Event) => this._handleCityCodeChanged(e)}
           ></ha-textfield>
           <div style="font-size: 0.8em; color: var(--secondary-text-color); margin-top: 4px;">
             ${isFr ? 'Laissez vide pour sélectionner les entités manuellement.' : 'Leave empty to select entities manually.'}
