@@ -1,6 +1,11 @@
 {
   "unknown": "Inconnu",
   "no_data": "Aucune donnée",
+  "configure_entities": "Veuillez configurer les entités dans l'éditeur de carte",
+  "currently_restricted": "Restriction actuelle",
+  "yes": "Oui",
+  "no": "Non",
+  "next_restriction": "Prochaine restriction",
   "fountains": "Fontaines",
   "gardens": "Jardins",
   "lawns": "Pelouses",

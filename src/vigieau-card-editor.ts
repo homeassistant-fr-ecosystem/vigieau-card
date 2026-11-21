@@ -11,7 +11,9 @@ import { HomeAssistant } from 'custom-card-helpers';
  */
 interface VigieauCardEditorConfig {
   type: string;
-  city_code: string;
+  alert_level_entity?: string;
+  alert_level_numeric_entity?: string;
+  restriction_entities?: string[];
   show_alert_level?: boolean;
   show_restrictions?: boolean;
   show_progress?: boolean;
@@ -25,7 +27,9 @@ export class VigieauCardEditor extends LitElement {
   @property() private hass!: HomeAssistant;
   @property() private _config: VigieauCardEditorConfig = {
     type: 'custom:vigieau-card',
-    city_code: '',
+    alert_level_entity: '',
+    alert_level_numeric_entity: '',
+    restriction_entities: [],
     show_alert_level: true,
     show_restrictions: true,
     show_progress: false,
@@ -38,7 +42,9 @@ export class VigieauCardEditor extends LitElement {
   public static getStubConfig(): VigieauCardEditorConfig {
     return {
       type: 'custom:vigieau-card',
-      city_code: '',
+      alert_level_entity: '',
+      alert_level_numeric_entity: '',
+      restriction_entities: [],
       show_alert_level: true,
       show_restrictions: true,
       show_progress: false,
@@ -69,47 +75,87 @@ export class VigieauCardEditor extends LitElement {
    * @returns Template result for the editor
    */
   protected render(): TemplateResult {
-    const { city_code, show_alert_level, show_restrictions, show_progress } = this._config;
+    const isFr = this.hass?.locale?.language === 'fr';
 
     return html`
       <ha-settings>
-        <ha-textfield
-          .label="INSEE City Code"
-          .value=${city_code}
-          @change=${(e: Event) => {
-            const target = e.target as HTMLInputElement;
-            this._config.city_code = target.value;
-            this.requestUpdate();
-          }}
-          .placeholder="e.g., 75056 for Paris, 35238 for Rennes"
-          required
-        ></ha-textfield>
+        <!-- Alert level entity -->
+        <div>
+          <div style="font-weight: 500; margin-bottom: 8px;">
+            ${isFr ? 'Entité niveau d\'alerte' : 'Alert level entity'}
+          </div>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${this._config.alert_level_entity || ''}
+            .domain=${['sensor']}
+            @value-changed=${(e: CustomEvent) => {
+              this._config.alert_level_entity = e.detail.value as string;
+              this.requestUpdate();
+            }}
+            .placeholder=${isFr ? 'Ex: sensor.alert_level_in_thorigne_fouillard' : 'Ex: sensor.alert_level_in_thorigne_fouillard'}
+          ></ha-entity-picker>
+        </div>
+
+        <!-- Numeric alert level entity (optional) -->
+        <div style="margin-top: 16px;">
+          <div style="font-weight: 500; margin-bottom: 8px;">
+            ${isFr ? 'Entité niveau numérique (optionnel)' : 'Numeric alert level entity (optional)'}
+          </div>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${this._config.alert_level_numeric_entity || ''}
+            .domain=${['sensor']}
+            @value-changed=${(e: CustomEvent) => {
+              this._config.alert_level_numeric_entity = e.detail.value as string;
+              this.requestUpdate();
+            }}
+            .placeholder=${isFr ? 'Ex: sensor.alert_level_numeric_thorigne_fouillard' : 'Ex: sensor.alert_level_numeric_thorigne_fouillard'}
+          ></ha-entity-picker>
+        </div>
+
+        <!-- Restriction entities (multiple) -->
+        <div style="margin-top: 16px;">
+          <div style="font-weight: 500; margin-bottom: 8px;">
+            ${isFr ? 'Entités de restrictions' : 'Restriction entities'}
+          </div>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${this._config.restriction_entities || []}
+            .domain=${['sensor']}
+            .multiple=${true}
+            @value-changed=${(e: CustomEvent) => {
+              this._config.restriction_entities = e.detail.value as string[];
+              this.requestUpdate();
+            }}
+            .placeholder=${isFr ? 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard' : 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard'}
+          ></ha-entity-picker>
+        </div>
 
         <ha-switch
-          .checked=${show_alert_level}
+          .checked=${this._config.show_alert_level}
           @change=${(e: Event) => {
             this._config.show_alert_level = (e.target as HTMLInputElement).checked;
           }}
         >
-          ${this.hass?.locale?.language === 'fr' ? 'Afficher le niveau d\'alerte' : 'Show alert level'}
+          ${isFr ? 'Afficher le niveau d\'alerte' : 'Show alert level'}
         </ha-switch>
 
         <ha-switch
-          .checked=${show_restrictions}
+          .checked=${this._config.show_restrictions}
           @change=${(e: Event) => {
             this._config.show_restrictions = (e.target as HTMLInputElement).checked;
           }}
         >
-          ${this.hass?.locale?.language === 'fr' ? 'Afficher les restrictions' : 'Show restrictions'}
+          ${isFr ? 'Afficher les restrictions' : 'Show restrictions'}
         </ha-switch>
 
         <ha-switch
-          .checked=${show_progress}
+          .checked=${this._config.show_progress}
           @change=${(e: Event) => {
             this._config.show_progress = (e.target as HTMLInputElement).checked;
           }}
         >
-          ${this.hass?.locale?.language === 'fr' ? 'Afficher la barre de progression' : 'Show progress bar'}
+          ${isFr ? 'Afficher la barre de progression' : 'Show progress bar'}
         </ha-switch>
       </ha-settings>
     `;
@@ -117,13 +163,16 @@ export class VigieauCardEditor extends LitElement {
 
   static get styles() {
     return css`
-      ha-textfield {
+      ha-textfield,
+      ha-entity-picker {
         margin-bottom: 16px;
+        display: block;
       }
 
       ha-switch {
         margin-right: 16px;
         margin-bottom: 16px;
+        display: block;
       }
     `;
   }

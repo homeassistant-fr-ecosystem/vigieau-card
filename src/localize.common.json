@@ -1,6 +1,11 @@
 {
   "unknown": "Unknown",
   "no_data": "No data",
+  "configure_entities": "Please configure entities in the card editor",
+  "currently_restricted": "Currently restricted",
+  "yes": "Yes",
+  "no": "No",
+  "next_restriction": "Next restriction",
   "fountains": "Fountains",
   "gardens": "Gardens",
   "lawns": "Lawns",

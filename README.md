@@ -48,7 +48,9 @@ type: module
 3. Cliquez sur **+ AJOUTER UNE CARTE**
 4. Descendez dans la section « Personnalisé » et sélectionnez **Vigieau Card**
 5. Remplissez la configuration :
-   - **Code INSEE de la ville** (requis)
+   - **Entité niveau d'alerte** : sélectionnez le sensor de niveau d'alerte (ex. `sensor.alert_level_in_thorigne_fouillard`)
+   - **Entité niveau numérique** (optionnel) : sélectionnez le sensor numérique (ex. `sensor.alert_level_numeric_thorigne_fouillard`)
+   - **Entités de restrictions** : sélectionnez un ou plusieurs sensors de restrictions (ex. `sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard`)
    - Options d'affichage selon vos besoins
 6. Cliquez sur **ENREGISTRER**
 
@@ -62,14 +64,28 @@ Vous pouvez aussi configurer la carte directement en YAML :
 
 ```yaml
 type: custom:vigieau-card
-city_code: "75056"
+alert_level_entity: sensor.alert_level_in_thorigne_fouillard
+restriction_entities:
+  - sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard
+  - sensor.jardins_potagers_restrictions_thorigne_fouillard
+  - sensor.pelouses_restrictions_thorigne_fouillard
+show_alert_level: true
+show_restrictions: true
+show_progress: false
 ```
 
-### Configuration complète
+### Configuration complète (avec niveau numérique)
 
 ```yaml
 type: custom:vigieau-card
-city_code: "75056"
+alert_level_entity: sensor.alert_level_in_thorigne_fouillard
+alert_level_numeric_entity: sensor.alert_level_numeric_thorigne_fouillard
+restriction_entities:
+  - sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard
+  - sensor.jardins_potagers_restrictions_thorigne_fouillard
+  - sensor.pelouses_restrictions_thorigne_fouillard
+  - sensor.lavage_des_vehicules_restrictions_thorigne_fouillard
+  - sensor.piscines_restrictions_thorigne_fouillard
 show_alert_level: true
 show_restrictions: true
 show_progress: false
@@ -80,52 +96,60 @@ show_progress: false
 | Nom | Type | Défaut | Description |
 |-----|------|--------|-------------|
 | `type` | string | **Requis** | `custom:vigieau-card` |
-| `city_code` | string | **Requis** | Code INSEE de la commune (ex. `75056` pour Paris, `35238` pour Rennes) |
+| `alert_level_entity` | string | — | Entity ID du sensor de niveau d'alerte (ex. `sensor.alert_level_in_thorigne_fouillard`) |
+| `alert_level_numeric_entity` | string | — | Entity ID du sensor de niveau numérique 0-4 (optionnel) |
+| `restriction_entities` | string[] | — | Liste des Entity ID des sensors de restrictions |
 | `show_alert_level` | boolean | `true` | Affiche la bannière de niveau d'alerte |
 | `show_restrictions` | boolean | `true` | Affiche la grille des restrictions par catégorie |
 | `show_progress` | boolean | `false` | Affiche la barre de progression numérique (0-4) |
 
-## Trouver votre code INSEE
-
-Le code INSEE est le code officiel géographique de votre commune française. Vous pouvez le trouver :
-
-- Sur [Wikipédia – Code officiel géographique](https://fr.wikipedia.org/wiki/Code_officiel_g%C3%A9ographique#Code_commune)
-- Dans Home Assistant : **Paramètres** → **Appareils et services** → **Intégrations** → Vigieau
-- Via le texte d'aide de l'éditeur de carte (ex. `75056` pour Paris, `35238` pour Rennes)
-
 ## Entités requises
 
-La carte attend les entités suivantes (où `{city_code}` est votre code INSEE configuré) :
+La carte utilise les entités créées par l'intégration [kamaradclimber/vigieau](https://github.com/kamaradclimber/vigieau) pour votre commune. Sélectionnez-les explicitement dans l'éditeur de carte :
 
-- `sensor.vigieau_alert_level_in_{city_code}` — Niveau d'alerte actuel
-- `sensor.vigieau_alert_level_numeric_{city_code}` — Niveau numérique (0 à 4)
-- `sensor.vigieau_{categorie}_restrictions_{city_code}` — Restrictions par catégorie (fontaines, jardins, pelouses, lavage_vehicules, piscines, routes, toits, etangs)
+- **Niveau d'alerte** : `sensor.alert_level_in_{ville_slug}` (ex. `sensor.alert_level_in_thorigne_fouillard`)
+- **Niveau numérique** : `sensor.alert_level_numeric_{ville_slug}` (optionnel, ex. `sensor.alert_level_numeric_thorigne_fouillard`)
+- **Restrictions par catégorie** : `sensor.{categorie}_restrictions_{ville_slug}` (ex. `sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard`)
 
-Ces entités sont créées automatiquement par l'intégration vigieau pour votre commune.
+Ces entités sont créées automatiquement par l'intégration vigieau pour votre commune. Vous les trouverez dans **Paramètres** → **Appareils et services** → **Entités**.
 
 ## Exemples d'utilisation
 
-### Ville unique
+### Ville unique (Thorigne-Fouillard)
 
 ```yaml
 type: custom:vigieau-card
-city_code: "75056"
+alert_level_entity: sensor.alert_level_in_thorigne_fouillard
+restriction_entities:
+  - sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard
+  - sensor.jardins_potagers_restrictions_thorigne_fouillard
+  - sensor.pelouses_restrictions_thorigne_fouillard
+show_alert_level: true
+show_restrictions: true
+show_progress: false
 ```
 
 ### Vue compacte (niveau d'alerte seulement)
 
 ```yaml
 type: custom:vigieau-card
-city_code: "35238"
+alert_level_entity: sensor.alert_level_in_thorigne_fouillard
 show_restrictions: false
 show_progress: false
 ```
 
-### Vue complète
+### Vue complète (avec niveau numérique)
 
 ```yaml
 type: custom:vigieau-card
-city_code: "75056"
+alert_level_entity: sensor.alert_level_in_thorigne_fouillard
+alert_level_numeric_entity: sensor.alert_level_numeric_thorigne_fouillard
+restriction_entities:
+  - sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard
+  - sensor.jardins_potagers_restrictions_thorigne_fouillard
+  - sensor.pelouses_restrictions_thorigne_fouillard
+  - sensor.lavage_des_vehicules_restrictions_thorigne_fouillard
+  - sensor.piscines_restrictions_thorigne_fouillard
 show_alert_level: true
 show_restrictions: true
 show_progress: false
