@@ -112,8 +112,6 @@ type: custom:vigieau-card
 city_code: "75056"
 ```
 
-![vigieau-card](assets/sample.png)
-
 ### Vue compacte (niveau d'alerte seulement)
 
 ```yaml
