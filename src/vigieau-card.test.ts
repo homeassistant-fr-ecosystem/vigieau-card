@@ -111,3 +111,4 @@ describe('getCategoryIcon', () => {
     expect(getCategoryIcon('inconnue')).toBe('mdi:water');
   });
 });
+
