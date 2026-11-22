@@ -46,8 +46,11 @@ jobs:
       - name: Tests
         run: npm test
 
-      # Mettre à jour la version dans package.json et committer avant de créer le tag,
-      # comme le faisait précédemment semantic-release.
+      # Mettre à jour la version dans package.json et committer sur develop.
+      # Ce commit est poussé sur develop (ci-dessous) pour que le tag et la
+      # release puissent y faire référence (target_commitish doit exister sur
+      # GitHub). Le changement de version est ainsi associé au commit de la
+      # release, pas uniquement à une branche.
       - name: Update package.json version
         id: version
         run: |
@@ -59,7 +62,12 @@ jobs:
           git add package.json
           git commit -m "chore(release): mettre à jour la version $VERSION"
           echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-          git push origin main
+
+      # Pousser le commit de version sur develop pour qu'il soit référençable
+      # par ncipollo/release-action (target_commitish doit exister sur GitHub).
+      # Sans ce push, la création de release échoue avec "target_commitish is invalid".
+      - name: Push version commit to develop
+        run: git push origin develop
 
       # Le build doit être exécuté après la mise à jour de version et le commit
       # ("chore(release): mettre à jour la version X"), afin que le numéro de version
@@ -77,7 +85,10 @@ jobs:
         with:
           makeLatest: true
           artifacts: "vigieau-card.js"
-          generateReleaseNotes: true
+          # generateReleaseNotes: true désactivé : l'API GitHub
+          # "generate release notes content" renvoie parfois une erreur 500.
+          # Les notes de release sont rédigées manuellement ou dérivées
+          # des commits conventionnels (voir CONTRIBUTING.md).
           tag: ${{ inputs.tag_name }}
           commit: ${{ steps.version.outputs.sha }}
           name: ${{ inputs.release_title || inputs.tag_name }}
