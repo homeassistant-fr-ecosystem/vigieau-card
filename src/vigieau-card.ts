@@ -121,10 +121,12 @@ export class VigieauCard extends LitElement {
   @state() private _entities: {
     alert_level: string | null;
     alert_level_numeric: string | null;
+    last_updated: string | null;
     restrictions: Map<string, { state: string; entity_id: string; attributes: Record<string, unknown>; category: string; entityFound: boolean }>;
   } = {
     alert_level: null,
     alert_level_numeric: null,
+    last_updated: null,
     restrictions: new Map(),
   };
 
@@ -304,8 +306,10 @@ export class VigieauCard extends LitElement {
     if (!this.hass || !this._config) return;
 
     // Update alert level entities
-    this._entities.alert_level = this._getState(this._config.alert_level_entity ?? null)?.state || null;
+    const alertEntity = this._getState(this._config.alert_level_entity ?? null);
+    this._entities.alert_level = alertEntity?.state || null;
     this._entities.alert_level_numeric = this._getState(this._config.alert_level_numeric_entity ?? null)?.state || null;
+    this._entities.last_updated = alertEntity?.last_updated ?? null;
 
     // Update restriction entities
     // Index by entity_id (unique) instead of category to avoid collisions between cities
@@ -367,6 +371,7 @@ export class VigieauCard extends LitElement {
   private _renderHeader(): TemplateResult {
     const alertLevel = this._entities.alert_level;
     const alertLevelNumeric = this._entities.alert_level_numeric;
+    const lastUpdated = this._entities.last_updated;
     const lang = this.hass?.locale?.language || this.hass?.language || 'fr';
 
     // Get color for the alert level
@@ -389,6 +394,33 @@ export class VigieauCard extends LitElement {
       alertText = this._getDisplayLevel(alertLevel);
     }
 
+    // City badge (optional)
+    let cityHtml: TemplateResult = html``;
+    if (this._config.show_city && this._config.city_code) {
+      cityHtml = html`<span class="card-city">${this._config.city_code}</span>`;
+    }
+
+    // Last update timestamp (optional)
+    let lastUpdatedHtml: TemplateResult = html``;
+    if (this._config.show_timestamp && lastUpdated) {
+      const date = new Date(lastUpdated);
+      if (!isNaN(date.getTime())) {
+        lastUpdatedHtml = html`<span class="last-updated">${localizeCommon('last_updated', lang)}: ${date.toLocaleString(lang, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>`;
+      }
+    }
+
+    // Active restrictions counter
+    let activeCountHtml: TemplateResult = html``;
+    if (this._config.show_restrictions) {
+      const activeCount = (this._config.restriction_entities ?? []).filter((eid) => {
+        const info = this._entities.restrictions.get(eid);
+        return info && !this._isNoRestriction(info.state);
+      }).length;
+      if (activeCount > 0) {
+        activeCountHtml = html`<span class="active-count">${activeCount} ${localizeCommon('active_restrictions', lang)}</span>`;
+      }
+    }
+
     // Progress bar only if enabled and numeric level available
     let progressHtml: TemplateResult = html``;
     if (this._config.show_progress && alertLevelNumeric !== null && !isNaN(Number(alertLevelNumeric))) {
@@ -405,21 +437,29 @@ export class VigieauCard extends LitElement {
 
     return html`
       <div class="card-header">
-        <div class="card-title">
-          <span>Vigieau</span>
+        <div class="header-main">
+          <div class="card-title">
+            <h3>Vigieau</h3>
+            ${cityHtml}
+          </div>
+          <div class="header-meta">
+            ${lastUpdatedHtml}
+            ${activeCountHtml}
+          </div>
+          <div
+            class="alert-level ${color} ${entityNotFound ? 'entity-not-found' : ''}"
+            role="button"
+            tabindex="0"
+            aria-label="${alertText}"
+            aria-live="polite"
+            @click=${() => this._showMoreInfo(alertEntityId ?? null)}
+            @keydown=${(e: KeyboardEvent) => this._handleCardKeyDown(e, alertEntityId ?? null)}
+          >
+            <ha-icon icon="mdi:alert-circle-outline" style="color: ${color};" aria-hidden="true"></ha-icon>
+            <span>${alertText}</span>
+          </div>
+          ${progressHtml}
         </div>
-        <div
-          class="alert-level ${color} ${entityNotFound ? 'entity-not-found' : ''}"
-          role="button"
-          tabindex="0"
-          aria-label="${alertText}"
-          @click=${() => this._showMoreInfo(alertEntityId ?? null)}
-          @keydown=${(e: KeyboardEvent) => this._handleCardKeyDown(e, alertEntityId ?? null)}
-        >
-          <ha-icon icon="mdi:alert-circle-outline" style="color: ${color};" aria-hidden="true"></ha-icon>
-          <span>${alertText}</span>
-        </div>
-        ${progressHtml}
         <ha-icon
           icon="mdi:refresh"
           class="refresh-button"
@@ -684,6 +724,14 @@ export class VigieauCard extends LitElement {
         margin-bottom: 16px;
         padding-bottom: 12px;
         border-bottom: 1px solid var(--divider-color);
+        gap: 16px;
+      }
+
+      .header-main {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
       }
 
       .card-title {
@@ -692,7 +740,37 @@ export class VigieauCard extends LitElement {
         color: var(--primary-text-color);
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
+        margin: 0;
+      }
+
+      .card-title h3 {
+        margin: 0;
+        font-size: inherit;
+        font-weight: inherit;
+      }
+
+      .card-city {
+        font-size: 0.8em;
+        color: var(--secondary-text-color);
+        background: var(--secondary-background-color);
+        padding: 2px 8px;
+        border-radius: 4px;
+        border: 1px solid var(--divider-color);
+        white-space: nowrap;
+      }
+
+      .header-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 0.8em;
+        color: var(--secondary-text-color);
+        flex-wrap: wrap;
+      }
+
+      .last-updated,
+      .active-count {
+        white-space: nowrap;
       }
 
       .alert-level {
@@ -810,11 +888,11 @@ export class VigieauCard extends LitElement {
         font-size: 0.85em;
         color: var(--primary-text-color);
         font-weight: 500;
-        white-space: nowrap;
         overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 150px;
-        line-height: 1.2;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        line-height: 1.3;
       }
 
       .restriction-level {
@@ -873,7 +951,11 @@ export class VigieauCard extends LitElement {
 
       .restriction-item.compact .restriction-name {
         font-size: 0.75em;
-        max-width: 100px;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        line-height: 1.2;
       }
 
       .restriction-item.compact .restriction-level {

@@ -28,6 +28,10 @@ export interface VigieauCardConfig {
   compact?: boolean;
   /** Hide restriction categories with no active restriction */
   hide_no_restriction?: boolean;
+  /** Show the city name / code in the header */
+  show_city?: boolean;
+  /** Show the last update timestamp in the header */
+  show_timestamp?: boolean;
   /** Tri des restrictions : 'config' (ordre config), 'alpha' (alphabétique), 'severity' (sévérité) */
   sort?: 'config' | 'alpha' | 'severity';
 }
@@ -56,7 +60,9 @@ export const DEFAULT_CONFIG: Required<VigieauCardConfig> = {
   show_progress: false,
   compact: false,
   hide_no_restriction: false,
-  sort: 'config',
+  show_city: true,
+  show_timestamp: true,
+  sort: 'severity',
 };
 
 /**
