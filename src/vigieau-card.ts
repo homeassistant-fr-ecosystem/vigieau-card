@@ -143,7 +143,6 @@ export class VigieauCard extends LitElement {
       show_alert_level: true,
       show_restrictions: true,
       show_progress: false,
-      show_last_updated: false,
       compact: false,
       hide_no_restriction: false,
     };
@@ -404,28 +403,11 @@ export class VigieauCard extends LitElement {
 
     const alertEntityId = this._config.alert_level_entity;
 
-    // Last updated timestamp
-    let lastUpdatedHtml: TemplateResult = html``;
-    if (this._config.show_last_updated && alertLevel) {
-      const entity = this._getState(this._config.alert_level_entity ?? null);
-      const lastUpdated = entity?.last_updated;
-      if (lastUpdated) {
-        const date = new Date(lastUpdated);
-        if (!isNaN(date.getTime())) {
-          lastUpdatedHtml = html`
-            <span class="last-updated" aria-label="${localizeCommon('last_updated', lang)}: ${lastUpdated}">
-              ${localizeCommon('last_updated_short', lang)}: ${date.toLocaleString(
-                lang,
-                { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }
-              )}
-            </span>
-          `;
-        }
-      }
-    }
-
     return html`
       <div class="card-header">
+        <div class="card-title">
+          <span>Vigieau</span>
+        </div>
         <div
           class="alert-level ${color} ${entityNotFound ? 'entity-not-found' : ''}"
           role="button"
@@ -438,7 +420,6 @@ export class VigieauCard extends LitElement {
           <span>${alertText}</span>
         </div>
         ${progressHtml}
-        ${lastUpdatedHtml}
         <ha-icon
           icon="mdi:refresh"
           class="refresh-button"
@@ -476,6 +457,12 @@ export class VigieauCard extends LitElement {
         return !this._isNoRestriction(info.state);
       });
     }
+
+    // Ne pas afficher les entités introuvables
+    restrictedEntries = restrictedEntries.filter((entry) => {
+      const info = entry[1];
+      return info.entityFound;
+    });
 
     // Sort restrictions according to config
     if (this._config.sort === 'alpha') {
@@ -699,6 +686,15 @@ export class VigieauCard extends LitElement {
         border-bottom: 1px solid var(--divider-color);
       }
 
+      .card-title {
+        font-weight: 700;
+        font-size: 1.25em;
+        color: var(--primary-text-color);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
       .alert-level {
         display: flex;
         align-items: center;
@@ -841,14 +837,6 @@ export class VigieauCard extends LitElement {
         outline: none;
       }
 
-      /* Last updated timestamp */
-      .last-updated {
-        font-size: 0.75em;
-        color: var(--secondary-text-color);
-        margin-left: auto;
-        white-space: nowrap;
-      }
-
       /* Compact mode */
       ha-card.compact {
         padding: 8px;
@@ -861,6 +849,10 @@ export class VigieauCard extends LitElement {
 
       ha-card.compact .alert-level span {
         font-size: 1em;
+      }
+
+      ha-card.compact .card-title {
+        font-size: 1.1em;
       }
 
       .restrictions-grid.compact {

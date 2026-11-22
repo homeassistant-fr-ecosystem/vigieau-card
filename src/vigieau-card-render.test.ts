@@ -33,7 +33,6 @@ async function mountCard(config: Partial<VigieauCardConfig>, entities: Record<st
     show_alert_level: true,
     show_restrictions: true,
     show_progress: false,
-    show_last_updated: false,
     compact: false,
     hide_no_restriction: false,
     ...config,
@@ -130,20 +129,6 @@ describe('VigieauCard rendering', () => {
     expect(fill?.style.width).toBe('50%');
   });
 
-  it('affiche l horodatage quand show_last_updated est activé', async () => {
-    const card = await mountCard(
-      {
-        alert_level_entity: 'sensor.alert_level_in_test',
-        show_last_updated: true,
-      },
-      {
-        'sensor.alert_level_in_test': { state: 'vigilance', last_updated: '2026-06-15T10:30:00' },
-      }
-    );
-    const lastUpdated = card.shadowRoot?.querySelector('.last-updated');
-    expect(lastUpdated).not.toBeNull();
-  });
-
   it('applique la classe compact sur ha-card quand compact est activé', async () => {
     const card = await mountCard(
       { alert_level_entity: 'sensor.alert_level_in_test', compact: true },
@@ -182,7 +167,7 @@ describe('VigieauCard rendering', () => {
     expect(alertLevel?.classList.contains('entity-not-found')).toBe(true);
   });
 
-  it('affiche "Entité introuvable" pour une restriction absente', async () => {
+  it('n affiche pas les restrictions "entité introuvable"', async () => {
     const card = await mountCard(
       {
         alert_level_entity: 'sensor.alert_level_in_test',
@@ -191,8 +176,7 @@ describe('VigieauCard rendering', () => {
       { 'sensor.alert_level_in_test': { state: 'vigilance' } }
     );
     const item = card.shadowRoot?.querySelector('.restriction-item.entity-not-found');
-    expect(item).not.toBeNull();
-    expect(item?.textContent).toContain('introuvable');
+    expect(item).toBeNull();
   });
 
   it('affiche une restriction normalement quand elle existe', async () => {

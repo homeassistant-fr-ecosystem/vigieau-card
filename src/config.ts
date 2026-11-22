@@ -24,8 +24,6 @@ export interface VigieauCardConfig {
   show_restrictions?: boolean;
   /** Show the numeric progress bar */
   show_progress?: boolean;
-  /** Show the last updated timestamp of the alert level entity */
-  show_last_updated?: boolean;
   /** Compact card size (reduced padding and font sizes) */
   compact?: boolean;
   /** Hide restriction categories with no active restriction */
@@ -56,7 +54,6 @@ export const DEFAULT_CONFIG: Required<VigieauCardConfig> = {
   show_alert_level: true,
   show_restrictions: true,
   show_progress: false,
-  show_last_updated: false,
   compact: false,
   hide_no_restriction: false,
   sort: 'config',
