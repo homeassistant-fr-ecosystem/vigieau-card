@@ -14,7 +14,7 @@ export interface VigieauCardConfig {
   city_code?: string;
   /** Entity id of the alert level sensor (e.g. sensor.alert_level_in_thorigne_fouillard) */
   alert_level_entity?: string;
-  /** Entity id of the numeric alert level sensor (e.g. sensor.alert_level_numeric_thorigne_fouillard) */
+  /** Entity id of the numeric alert level sensor (e.g. sensor.alert_level_in_thorigne_fouillard_numeric) */
   alert_level_numeric_entity?: string;
   /** Entity ids of the restriction sensors (e.g. sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard) */
   restriction_entities?: string[];
@@ -75,7 +75,7 @@ export function buildEntityIdsFromCityCode(cityCode: string): {
   const slug = cityCode.toLowerCase().trim();
   return {
     alert_level_entity: `sensor.alert_level_in_${slug}`,
-    alert_level_numeric_entity: `sensor.alert_level_numeric_${slug}`,
+    alert_level_numeric_entity: `sensor.alert_level_in_${slug}_numeric`,
     restriction_entities: RESTRICTION_CATEGORIES.map(
       (cat) => `sensor.${cat}_restrictions_${slug}`
     ),

@@ -164,7 +164,7 @@ export class VigieauCardEditor extends LitElement {
               this._config.alert_level_numeric_entity = e.detail.value as string;
               this._notifyConfigChanged();
             }}
-            .placeholder=${isFr ? 'Ex: sensor.alert_level_numeric_thorigne_fouillard' : 'Ex: sensor.alert_level_numeric_thorigne_fouillard'}
+            .placeholder=${isFr ? 'Ex: sensor.alert_level_in_thorigne_fouillard_numeric' : 'Ex: sensor.alert_level_in_thorigne_fouillard_numeric'}
           ></ha-entity-picker>
         </div>
 
