@@ -157,8 +157,7 @@ describe('VigieauCard rendering', () => {
       { 'sensor.alert_level_in_test': { state: 'vigilance' } }
     );
     const item = card.shadowRoot?.querySelector('.restriction-item.entity-not-found');
-    expect(item).not.toBeNull();
-    expect(item?.textContent).toContain('introuvable');
+    expect(item).toBeNull();
   });
 
   it('affiche une restriction normalement quand elle existe', async () => {

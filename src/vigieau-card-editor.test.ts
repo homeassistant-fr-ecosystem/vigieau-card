@@ -80,10 +80,7 @@ describe('VigieauCardEditor', () => {
       expect(built.restriction_entities).toContain(
         'sensor.vigieau_aep_fountain_supply_restrictions_in_35322'
       );
-      expect(built.restriction_entities).toContain(
-        'binary_sensor.outdoor_vigieau_35322_aep_fountain_supply_allowed_in_35322'
-      );
-      expect(built.restriction_entities.length).toBe(34);
+      expect(built.restriction_entities.length).toBe(17);
     });
 
     it('regénère les entités quand le code ville change (éditeur)', () => {

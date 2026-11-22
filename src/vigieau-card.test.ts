@@ -57,10 +57,7 @@ describe('buildEntityIdsFromCityCode', () => {
     expect(result.restriction_entities).toContain(
       'sensor.vigieau_aep_pool_draining_and_filling_restrictions_in_35322'
     );
-    expect(result.restriction_entities).toContain(
-      'binary_sensor.outdoor_vigieau_35322_aep_fountain_supply_allowed_in_35322'
-    );
-    expect(result.restriction_entities.length).toBe(34);
+    expect(result.restriction_entities.length).toBe(17);
   });
 
   it('normalise le slug (minuscules, trim)', () => {

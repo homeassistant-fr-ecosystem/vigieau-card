@@ -3,4 +3,4 @@
  * Fichier généré automatiquement par scripts/generate-version.js lors du build.
  * Ne pas éditer à la main.
  */
-export const VERSION = "1.0.0-b4";
+export const VERSION = "1.0.0-b5";

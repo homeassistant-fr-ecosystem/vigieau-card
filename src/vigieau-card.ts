@@ -441,7 +441,7 @@ export class VigieauCard extends LitElement {
     // Active restrictions counter
     let activeCountHtml: TemplateResult = html``;
     if (this._config.show_restrictions) {
-      const activeCount = this._getRestrictionEntities().filter((eid) => {
+      const activeCount = (this._config.restriction_entities || []).filter((eid) => {
         const info = this._entities.restrictions.get(eid);
         return info && !this._isNoRestriction(info.state);
       }).length;
@@ -541,9 +541,7 @@ export class VigieauCard extends LitElement {
 
       // Build title with attributes if available
       let title = displayName;
-      if (entityNotFound) {
-        title += ` - ${localizeCommon('entity_not_found', lang)}`;
-      } else {
+      if (!entityNotFound) {
         const currentlyRestricted = attributes['currently_restricted'];
         if (currentlyRestricted !== undefined) {
           title += ` - ${localizeCommon('currently_restricted', lang)}: ${currentlyRestricted ? localizeCommon('yes', lang) : localizeCommon('no', lang)}`;
@@ -571,9 +569,7 @@ export class VigieauCard extends LitElement {
 
       // Restriction level text (lowercase -> capitalize)
       let levelText: string;
-      if (entityNotFound) {
-        levelText = localizeCommon('entity_not_found', lang);
-      } else if (!state) {
+      if (!state) {
         levelText = localizeCommon('unknown', lang);
       } else if (state === 'unavailable') {
         levelText = localizeCommon('entity_unavailable', lang);
@@ -585,24 +581,28 @@ export class VigieauCard extends LitElement {
 
       const ariaLabel = `${displayName}: ${levelText}`;
 
-      return html`
-        <div
-          class="restriction-item ${this._config.compact ? 'compact' : ''} ${isBinary ? 'binary' : ''} ${entityNotFound ? 'entity-not-found' : ''}"
-          role="button"
-          tabindex="0"
-          aria-label="${ariaLabel}"
-          title="${title}"
-          @click=${() => this._showMoreInfo(entity_id)}
-          @keydown=${(e: KeyboardEvent) => this._handleCardKeyDown(e, entity_id)}
-          style="border-color: ${color};"
-        >
-          <ha-icon icon="${icon}" style="color: ${color};" aria-hidden="true"></ha-icon>
-          <div class="restriction-content">
-            <span class="restriction-name">${displayName}</span>
-            <span class="restriction-level" style="color: ${color};">${levelText}</span>
+      if(entityNotFound){
+         return html``;
+      }else{
+        return html`
+          <div
+            class="restriction-item ${this._config.compact ? 'compact' : ''} ${isBinary ? 'binary' : ''} ${entityNotFound ? 'entity-not-found' : ''}"
+            role="button"
+            tabindex="0"
+            aria-label="${ariaLabel}"
+            title="${title}"
+            @click=${() => this._showMoreInfo(entity_id)}
+            @keydown=${(e: KeyboardEvent) => this._handleCardKeyDown(e, entity_id)}
+            style="border-color: ${color};"
+          >
+            <ha-icon icon="${icon}" style="color: ${color};" aria-hidden="true"></ha-icon>
+            <div class="restriction-content">
+              <span class="restriction-name">${displayName}</span>
+              <span class="restriction-level" style="color: ${color};">${levelText}</span>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+        }
     });
 
     return html`

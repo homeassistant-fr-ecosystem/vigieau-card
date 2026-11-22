@@ -44,7 +44,7 @@ export const RESTRICTION_CATEGORIES: string[] = [
   'animal_use',
   'canal_water_withdrawal',
   'golf_course_watering',
-  'market_gardening_and_crops',
+  'market_gardening_and_crop',
   'pond_filling_draining',
   'river_navigation',
   'river_works',
@@ -92,7 +92,7 @@ export function buildEntityIdsFromCityCode(cityCode: string): {
   return {
     alert_level_entity: `sensor.outdoor_vigieau_${slug}_aep_alert_level_in_${slug}`,
     alert_level_numeric_entity: `sensor.outdoor_vigieau_${slug}_aep_alert_level_in_${slug}_numeric`,
-    restriction_entities: [...sensors, ...binarySensors],
+    restriction_entities: [...sensors],
     restriction_binary_entities: binarySensors,
   };
 }
