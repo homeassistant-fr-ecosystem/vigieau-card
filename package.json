@@ -10,8 +10,7 @@
     "lint": "eslint src",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "semantic-release": "semantic-release"
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "home-assistant",
@@ -31,7 +30,7 @@
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^1.0.2",
-    "custom-card-helpers": "^1.9.0",
+    "custom-card-helpers": "^2.2.1",
     "lit": "^3.3.3",
     "tslib": "^2.9.1"
   },
@@ -40,14 +39,18 @@
     "@rollup/plugin-commonjs": "^29.0.3",
     "@rollup/plugin-typescript": "^12.1.2",
     "@rollup/plugin-url": "^8.0.2",
-    "@semantic-release/changelog": "^6.0.1",
-    "@semantic-release/github": "^10.0.3",
     "eslint": "^10.15.0",
-    "happy-dom": "^15.0.0",
+    "happy-dom": "^21.0.4",
+<<<<<<< HEAD
     "rollup": "^2.80.0",
     "semantic-release": "^24.0.0",
+=======
+    "rollup": "^4.68.6",
+    "tslib": "^2.9.1",
+>>>>>>> eb7f75b (build(deps): moderniser dépendances et toolchain (Lit v3, ESLint 10, Rollup 4.68, TS 5.9, vitest, semantic-release))
     "typescript": "^5.9.3",
+    "vite": "^8.3.4",
     "typescript-eslint": "^8.73.0",
-    "vitest": "^3.0.0"
+    "vitest": "^5.1.1"
   }
 }
