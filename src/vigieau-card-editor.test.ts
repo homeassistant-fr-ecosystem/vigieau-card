@@ -13,8 +13,6 @@ describe('VigieauCardEditor', () => {
       expect(stub.restriction_entities).toEqual([]);
       expect(stub.show_alert_level).toBe(true);
       expect(stub.show_restrictions).toBe(true);
-      expect(stub.show_progress).toBe(false);
-      expect(stub.show_last_updated).toBe(false);
       expect(stub.compact).toBe(false);
       expect(stub.hide_no_restriction).toBe(false);
     });
@@ -60,15 +58,13 @@ describe('VigieauCardEditor', () => {
 
       let received: VigieauCardEditorConfig | null = null;
       editor.addEventListener(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        'config-changed' as any,
-        ((e: CustomEvent) => {
-          received = e.detail.config as VigieauCardEditorConfig;
-        }) as EventListener
+        'config-changed',
+        (e: Event) => {
+          received = (e as CustomEvent).detail.config as VigieauCardEditorConfig;
+        }
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor as any)._notifyConfigChanged();
+      (editor as unknown as { _notifyConfigChanged: () => void })._notifyConfigChanged();
 
       expect(received).not.toBeNull();
       expect(received!.city_code).toBe('35322');
@@ -80,7 +76,7 @@ describe('VigieauCardEditor', () => {
     it('construit les entity ids à partir d un code INSEE', () => {
       const built = buildEntityIdsFromCityCode('35322');
       expect(built.alert_level_entity).toBe('sensor.alert_level_in_35322');
-      expect(built.alert_level_numeric_entity).toBe('sensor.alert_level_numeric_35322');
+      expect(built.alert_level_numeric_entity).toBe('sensor.alert_level_in_35322_numeric');
       expect(built.restriction_entities).toContain(
         'sensor.alimentation_des_fontaines_restrictions_35322'
       );
@@ -100,13 +96,12 @@ describe('VigieauCardEditor', () => {
         bubbles: true,
         composed: true,
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor as any)._handleCityCodeChanged(event);
+      (editor as unknown as { _handleCityCodeChanged: (e: CustomEvent | Event) => void })._handleCityCodeChanged(event);
 
       expect(editor.config.city_code).toBe('thorigne_fouillard');
       expect(editor.config.alert_level_entity).toBe('sensor.alert_level_in_thorigne_fouillard');
       expect(editor.config.alert_level_numeric_entity).toBe(
-        'sensor.alert_level_numeric_thorigne_fouillard'
+        'sensor.alert_level_in_thorigne_fouillard_numeric'
       );
       expect(editor.config.restriction_entities).toContain(
         'sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard'
@@ -129,14 +124,123 @@ describe('VigieauCardEditor', () => {
         bubbles: true,
         composed: true,
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (editor as any)._handleCityCodeChanged(event);
+      (editor as unknown as { _handleCityCodeChanged: (e: CustomEvent | Event) => void })._handleCityCodeChanged(event);
 
       expect(editor.config.city_code).toBe('thorigne_fouillard');
       // Les entités saisies manuellement doivent être préservées, pas écrasées
       expect(editor.config.alert_level_entity).toBe('sensor.custom_alert');
       expect(editor.config.alert_level_numeric_entity).toBe('sensor.custom_numeric');
       expect(editor.config.restriction_entities).toEqual(['sensor.custom_restriction']);
+    });
+
+    it('l edition du slug met a jour city_code et regenere les entites par defaut', () => {
+      const editor = new VigieauCardEditor();
+      editor.setConfig({
+        type: 'custom:vigieau-card',
+        city_code: '35322',
+      } as VigieauCardEditorConfig);
+
+      // Simule une saisie utilisateur dans le champ texte natif (input event)
+      const event = new Event('input', { bubbles: true });
+      Object.defineProperty(event, 'target', {
+        value: { value: 'thorigne_fouillard' },
+      });
+      (editor as unknown as { _handleCityCodeChanged: (e: CustomEvent | Event) => void })._handleCityCodeChanged(event);
+
+      expect(editor.config.city_code).toBe('thorigne_fouillard');
+      expect(editor.config.alert_level_entity).toBe(
+        'sensor.alert_level_in_thorigne_fouillard'
+      );
+      expect(editor.config.alert_level_numeric_entity).toBe(
+        'sensor.alert_level_in_thorigne_fouillard_numeric'
+      );
+      expect(editor.config.restriction_entities).toContain(
+        'sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard'
+      );
+      expect((editor.config.restriction_entities ?? []).length).toBe(8);
+    });
+  });
+
+  describe('switchs (ha-switch)', () => {
+    it('toggle show_alert_level met a jour la config et dispatch config-changed', () => {
+      const editor = new VigieauCardEditor();
+      editor.setConfig({
+        type: 'custom:vigieau-card',
+        city_code: '35322',
+        show_alert_level: true,
+      } as VigieauCardEditorConfig);
+
+      let received: VigieauCardEditorConfig | null = null;
+      editor.addEventListener(
+        'config-changed',
+        (e: Event) => {
+          received = (e as CustomEvent).detail.config as VigieauCardEditorConfig;
+        }
+      );
+
+      // Simule le changement de switch via le handler inline du template
+      const event = new Event('change', { bubbles: true });
+      Object.defineProperty(event, 'target', {
+        value: { checked: false },
+      });
+      (editor as unknown as { _config: { show_alert_level: boolean } })._config.show_alert_level = (event.target as HTMLInputElement).checked;
+      (editor as unknown as { _notifyConfigChanged: () => void })._notifyConfigChanged();
+
+      expect(received).not.toBeNull();
+      expect(received!.show_alert_level).toBe(false);
+    });
+
+    it('toggle show_restrictions met a jour la config et la propage', () => {
+      const editor = new VigieauCardEditor();
+      editor.setConfig({
+        type: 'custom:vigieau-card',
+        city_code: '35322',
+        show_restrictions: true,
+      } as VigieauCardEditorConfig);
+
+      let received: VigieauCardEditorConfig | null = null;
+      editor.addEventListener(
+        'config-changed',
+        (e: Event) => {
+          received = (e as CustomEvent).detail.config as VigieauCardEditorConfig;
+        }
+      );
+
+      const event = new Event('change', { bubbles: true });
+      Object.defineProperty(event, 'target', {
+        value: { checked: false },
+      });
+      (editor as unknown as { _config: { show_restrictions: boolean } })._config.show_restrictions = (event.target as HTMLInputElement).checked;
+      (editor as unknown as { _notifyConfigChanged: () => void })._notifyConfigChanged();
+
+      expect(received).not.toBeNull();
+      expect(received!.show_restrictions).toBe(false);
+    });
+
+    it('tous les switchs sont initialises a partir de la config et dispatchent', () => {
+      const editor = new VigieauCardEditor();
+      editor.setConfig({
+        type: 'custom:vigieau-card',
+        city_code: '35322',
+        compact: true,
+        hide_no_restriction: true,
+      } as VigieauCardEditorConfig);
+
+      expect(editor.config.compact).toBe(true);
+      expect(editor.config.hide_no_restriction).toBe(true);
+
+      let received: VigieauCardEditorConfig | null = null;
+      editor.addEventListener(
+        'config-changed',
+        (e: Event) => {
+          received = (e as CustomEvent).detail.config as VigieauCardEditorConfig;
+        }
+      );
+      (editor as unknown as { _notifyConfigChanged: () => void })._notifyConfigChanged();
+
+      expect(received).not.toBeNull();
+      expect(received!.compact).toBe(true);
+      expect(received!.hide_no_restriction).toBe(true);
     });
   });
 });

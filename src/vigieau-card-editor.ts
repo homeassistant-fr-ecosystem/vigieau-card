@@ -18,8 +18,6 @@ export interface VigieauCardEditorConfig {
   restriction_entities?: string[];
   show_alert_level?: boolean;
   show_restrictions?: boolean;
-  show_progress?: boolean;
-  show_last_updated?: boolean;
   compact?: boolean;
   hide_no_restriction?: boolean;
 }
@@ -38,8 +36,6 @@ export class VigieauCardEditor extends LitElement {
     restriction_entities: [],
     show_alert_level: true,
     show_restrictions: true,
-    show_progress: false,
-    show_last_updated: false,
     compact: false,
     hide_no_restriction: false,
   };
@@ -201,13 +197,13 @@ export class VigieauCardEditor extends LitElement {
           <ha-entity-picker
             .hass=${this.hass}
             .value=${this._config.restriction_entities || []}
-            .domain=${['sensor']}
+            .domain=${['sensor', 'binary_sensor']}
             .multiple=${true}
             @value-changed=${(e: CustomEvent) => {
               this._config.restriction_entities = e.detail.value as string[];
               this._notifyConfigChanged();
             }}
-            .placeholder=${isFr ? 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard' : 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard'}
+            .placeholder=${isFr ? 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard ou binary_sensor.vigieau_...' : 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard or binary_sensor.vigieau_...'}
           ></ha-entity-picker>
         </div>
 
@@ -229,26 +225,6 @@ export class VigieauCardEditor extends LitElement {
           }}
         >
           ${isFr ? 'Afficher les restrictions' : 'Show restrictions'}
-        </ha-switch>
-
-        <ha-switch
-          .checked=${this._config.show_progress}
-          @change=${(e: Event) => {
-            this._config.show_progress = (e.target as HTMLInputElement).checked;
-            this._notifyConfigChanged();
-          }}
-        >
-          ${isFr ? 'Afficher la barre de progression' : 'Show progress bar'}
-        </ha-switch>
-
-        <ha-switch
-          .checked=${this._config.show_last_updated}
-          @change=${(e: Event) => {
-            this._config.show_last_updated = (e.target as HTMLInputElement).checked;
-            this._notifyConfigChanged();
-          }}
-        >
-          ${isFr ? 'Afficher l\'horodatage' : 'Show last updated'}
         </ha-switch>
 
         <ha-switch
