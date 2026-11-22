@@ -22,6 +22,10 @@ export interface VigieauCardConfig {
   show_alert_level?: boolean;
   /** Show the restrictions grid */
   show_restrictions?: boolean;
+  /** Show the numeric progress bar */
+  show_progress?: boolean;
+  /** Show the last updated timestamp of the alert level entity */
+  show_last_updated?: boolean;
   /** Compact card size (reduced padding and font sizes) */
   compact?: boolean;
   /** Hide restriction categories with no active restriction */
@@ -51,6 +55,8 @@ export const DEFAULT_CONFIG: Required<VigieauCardConfig> = {
   restriction_entities: [],
   show_alert_level: true,
   show_restrictions: true,
+  show_progress: false,
+  show_last_updated: false,
   compact: false,
   hide_no_restriction: false,
   sort: 'config',
@@ -69,7 +75,7 @@ export function buildEntityIdsFromCityCode(cityCode: string): {
   const slug = cityCode.toLowerCase().trim();
   return {
     alert_level_entity: `sensor.alert_level_in_${slug}`,
-    alert_level_numeric_entity: `sensor.alert_level_in_${slug}_numeric`,
+    alert_level_numeric_entity: `sensor.alert_level_numeric_${slug}`,
     restriction_entities: RESTRICTION_CATEGORIES.map(
       (cat) => `sensor.${cat}_restrictions_${slug}`
     ),

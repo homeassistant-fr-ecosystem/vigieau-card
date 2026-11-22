@@ -123,6 +123,7 @@ hide_no_restriction: false
 | `show_last_updated` | boolean | `false` | Affiche l'horodatage de la dernière mise à jour |
 | `compact` | boolean | `false` | Affiche la carte en taille compacte (padding réduit) |
 | `hide_no_restriction` | boolean | `false` | Masque les catégories sans restriction active (niveau « aucune restriction » / « vigilance ») |
+| `sort` | string | `config` | Tri des restrictions : `config` (ordre de config), `alpha` (alphabétique), `severity` (par sévérité) |
 
 ## Entités requises
 
@@ -199,6 +200,10 @@ Vérifiez qu'au moins une entité est configurée (niveau d'alerte ou restrictio
 ### Une entité affiche « Entité indisponible » ou « État inconnu »
 
 L'entité existe mais n'a pas d'état valide pour le moment. Cela peut arriver si le service vigieau est temporairement indisponible ou si l'intégration n'a pas encore récupéré les données. La carte affiche une couleur grise dans ce cas.
+
+### Une entité affiche « Entité introuvable »
+
+L'entity ID configuré n'existe pas dans Home Assistant. Vérifiez l'orthographe de l'entity ID dans l'éditeur de carte et assurez-vous que l'intégration vigieau a créé l'entité. Vous pouvez utiliser le bouton de rafraîchissement (icône circulaire) de la carte pour relancer la lecture des états après avoir corrigé la configuration.
 
 ### Une restriction ne s'affiche pas
 

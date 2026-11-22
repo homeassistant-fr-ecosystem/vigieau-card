@@ -19,19 +19,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-<<<<<<< HEAD
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-=======
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
->>>>>>> eb7f75b (build(deps): moderniser dépendances et toolchain (Lit v3, ESLint 10, Rollup 4.68, TS 5.9, vitest, semantic-release))
 
       - name: Install dependencies
         run: npm ci
@@ -42,74 +34,10 @@ jobs:
       - name: Build
         run: npm run build
 
-<<<<<<< HEAD
-    - name: Build project
-      run: npm run build
-
-    - name: Check build output
-      run: |
-        if [ ! -f dist/vigieau-card.js ]; then
-          echo "Build failed - dist/vigieau-card.js not found"
-          exit 1
-        fi
-        echo "Build successful - dist/vigieau-card.js created"
-        ls -lh dist/
-
-    - name: Upload build artifact
-      if: matrix.node-version == '22.x'
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-output
-        path: dist/
-        retention-days: 7
-
-  typecheck:
-    name: TypeScript Type Check
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v7
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22.x
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Run TypeScript compiler check
-      run: npx tsc --noEmit
-
-  translation-check:
-    name: Translation Validation
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v7
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22.x
-        cache: 'npm'
-
-    - name: Validate translation files
-      run: |
-        # Check that all translation files are valid JSON
-        for file in src/*.json; do
-          echo "Validating $file..."
-          if ! jq empty "$file" 2>/dev/null; then
-            echo "❌ Invalid JSON in $file"
-=======
       - name: Check build output
         run: |
           if [ ! -f dist/vigieau-card.js ]; then
             echo "Build failed - dist/vigieau-card.js not found"
->>>>>>> eb7f75b (build(deps): moderniser dépendances et toolchain (Lit v3, ESLint 10, Rollup 4.68, TS 5.9, vitest, semantic-release))
             exit 1
           fi
           echo "Build successful - dist/vigieau-card.js created"
@@ -182,19 +110,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-<<<<<<< HEAD
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22.x
-        cache: 'npm'
-=======
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22.x
           cache: npm
->>>>>>> eb7f75b (build(deps): moderniser dépendances et toolchain (Lit v3, ESLint 10, Rollup 4.68, TS 5.9, vitest, semantic-release))
 
       - name: Install dependencies
         run: npm ci
@@ -251,13 +171,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-<<<<<<< HEAD
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22.x
-        cache: 'npm'
-=======
       - name: Check for console.log statements
         run: |
           if grep -rn "console\.log" src/; then
@@ -265,7 +178,6 @@ jobs:
           else
             echo "No console.log statements found"
           fi
->>>>>>> eb7f75b (build(deps): moderniser dépendances et toolchain (Lit v3, ESLint 10, Rollup 4.68, TS 5.9, vitest, semantic-release))
 
       - name: Check for TODO comments
         run: |

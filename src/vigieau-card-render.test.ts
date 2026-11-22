@@ -32,6 +32,8 @@ async function mountCard(config: Partial<VigieauCardConfig>, entities: Record<st
     restriction_entities: [],
     show_alert_level: true,
     show_restrictions: true,
+    show_progress: false,
+    show_last_updated: false,
     compact: false,
     hide_no_restriction: false,
     ...config,
@@ -110,19 +112,36 @@ describe('VigieauCard rendering', () => {
     expect(card.shadowRoot?.textContent).toContain('Piscines');
   });
 
-  it('affiche le titre Vigieau avant le niveau d alerte', async () => {
+  it('affiche la barre de progression quand show_progress et niveau numérique', async () => {
     const card = await mountCard(
-      { alert_level_entity: 'sensor.alert_level_in_test' },
-      { 'sensor.alert_level_in_test': { state: 'alerte' } }
+      {
+        alert_level_entity: 'sensor.alert_level_in_test',
+        alert_level_numeric_entity: 'sensor.alert_level_numeric_test',
+        show_progress: true,
+      },
+      {
+        'sensor.alert_level_in_test': { state: 'alerte' },
+        'sensor.alert_level_numeric_test': { state: '2' },
+      }
     );
-    const title = card.shadowRoot?.querySelector('.card-title');
-    expect(title).not.toBeNull();
-    expect(title?.textContent).toContain('Vigieau');
-    // Le titre doit se trouver juste avant le niveau d alerte dans le header
-    const header = card.shadowRoot?.querySelector('.card-header');
-    expect(header).not.toBeNull();
-    const firstChild = header?.firstElementChild;
-    expect(firstChild?.classList.contains('card-title')).toBe(true);
+    const progressBar = card.shadowRoot?.querySelector('.progress-bar');
+    expect(progressBar).not.toBeNull();
+    const fill = card.shadowRoot?.querySelector('.progress-fill') as HTMLElement | null;
+    expect(fill?.style.width).toBe('50%');
+  });
+
+  it('affiche l horodatage quand show_last_updated est activé', async () => {
+    const card = await mountCard(
+      {
+        alert_level_entity: 'sensor.alert_level_in_test',
+        show_last_updated: true,
+      },
+      {
+        'sensor.alert_level_in_test': { state: 'vigilance', last_updated: '2026-06-15T10:30:00' },
+      }
+    );
+    const lastUpdated = card.shadowRoot?.querySelector('.last-updated');
+    expect(lastUpdated).not.toBeNull();
   });
 
   it('applique la classe compact sur ha-card quand compact est activé', async () => {
@@ -163,7 +182,7 @@ describe('VigieauCard rendering', () => {
     expect(alertLevel?.classList.contains('entity-not-found')).toBe(true);
   });
 
-  it('ne affiche pas une restriction absente (entité introuvable)', async () => {
+  it('affiche "Entité introuvable" pour une restriction absente', async () => {
     const card = await mountCard(
       {
         alert_level_entity: 'sensor.alert_level_in_test',
@@ -171,8 +190,9 @@ describe('VigieauCard rendering', () => {
       },
       { 'sensor.alert_level_in_test': { state: 'vigilance' } }
     );
-    const item = card.shadowRoot?.querySelector('.restriction-item');
-    expect(item).toBeNull();
+    const item = card.shadowRoot?.querySelector('.restriction-item.entity-not-found');
+    expect(item).not.toBeNull();
+    expect(item?.textContent).toContain('introuvable');
   });
 
   it('affiche une restriction normalement quand elle existe', async () => {

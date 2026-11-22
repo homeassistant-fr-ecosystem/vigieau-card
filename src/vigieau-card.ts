@@ -142,6 +142,8 @@ export class VigieauCard extends LitElement {
       restriction_entities: [],
       show_alert_level: true,
       show_restrictions: true,
+      show_progress: false,
+      show_last_updated: false,
       compact: false,
       hide_no_restriction: false,
     };
@@ -218,7 +220,7 @@ export class VigieauCard extends LitElement {
       }
 
       // Check if restriction entities changed
-      const restrictionEntities = this._getAllRestrictionEntities();
+      const restrictionEntities = this._getRestrictionEntities();
       return restrictionEntities.some((entityId: string) => {
         return oldHass.states[entityId]?.state !== this.hass.states[entityId]?.state;
       });
@@ -244,40 +246,6 @@ export class VigieauCard extends LitElement {
    */
   private _getRestrictionEntities(): string[] {
     return this._config.restriction_entities || [];
-  }
-
-  /**
-   * Découvre automatiquement toutes les entités de restrictions correspondant
-   * au pattern sensor.*_restrictions_{slug} dans l'état de Home Assistant.
-   * Cela permet de prendre en charge les entités nommées par l'intégration vigieau
-   * sans nécessiter de configuration manuelle de chaque entité.
-   * @param slug - Le slug de la ville (ex: thorigne_fouillard)
-   * @returns Liste des entity_ids découverts
-   */
-  private _discoverRestrictionEntities(slug: string): string[] {
-    if (!this.hass || !slug) return [];
-    const suffix = `_restrictions_${slug.toLowerCase().trim()}`;
-    return Object.keys(this.hass.states).filter(
-      (entityId) =>
-        entityId.startsWith('sensor.') && entityId.endsWith(suffix)
-    );
-  }
-
-  /**
-   * Get all restriction entity ids: configured ones plus auto-discovered ones.
-   * @returns Array of entity IDs (deduplicated)
-   */
-  private _getAllRestrictionEntities(): string[] {
-    const configured = this._getRestrictionEntities();
-    const slug = this._config.city_code ?? '';
-    const discovered = this._discoverRestrictionEntities(slug);
-    const all = [...configured];
-    for (const id of discovered) {
-      if (!all.includes(id)) {
-        all.push(id);
-      }
-    }
-    return all;
   }
 
   /**
@@ -311,15 +279,6 @@ export class VigieauCard extends LitElement {
    * @returns The category key or empty string if it cannot be extracted
    */
   private _extractCategoryFromEntityId(entityId: string): string {
-    // Pattern vigieau complet :
-    // sensor.vigieau_{slug}_eaux_de_surface_{categorie}_restrictions_{slug}
-    const vigieauMatch = entityId.match(
-      /^sensor\.vigieau_.+?_eaux_de_surface_(.+)_restrictions_/
-    );
-    if (vigieauMatch) {
-      return vigieauMatch[1];
-    }
-    // Pattern standard : sensor.{categorie}_restrictions_{slug}
     const sensorMatch = entityId.match(/^sensor\.(.+)_restrictions_/);
     if (sensorMatch) {
       return sensorMatch[1];
@@ -327,14 +286,6 @@ export class VigieauCard extends LitElement {
     const binaryMatch = entityId.match(/^binary_sensor\.vigieau-(.+)-/);
     if (binaryMatch) {
       return binaryMatch[1];
-    }
-    // Vigieau integration binary sensors use underscores:
-    // binary_sensor.vigieau_{ville}_eaux_de_surface_{categorie}_binary_{ville}
-    const binaryVigieauMatch = entityId.match(
-      /^binary_sensor\.vigieau_.+?_eaux_de_surface_(.+)_binary_/
-    );
-    if (binaryVigieauMatch) {
-      return binaryVigieauMatch[1];
     }
     // Fallback: use the part after the domain and before the last _restrictions or suffix
     const parts = entityId.split('.');
@@ -360,7 +311,7 @@ export class VigieauCard extends LitElement {
     // Update restriction entities
     // Index by entity_id (unique) instead of category to avoid collisions between cities
     this._entities.restrictions.clear();
-    const restrictionEntities = this._getAllRestrictionEntities();
+    const restrictionEntities = this._getRestrictionEntities();
     for (const entityId of restrictionEntities) {
       const state = this._getState(entityId);
       let category = '';
@@ -416,6 +367,7 @@ export class VigieauCard extends LitElement {
    */
   private _renderHeader(): TemplateResult {
     const alertLevel = this._entities.alert_level;
+    const alertLevelNumeric = this._entities.alert_level_numeric;
     const lang = this.hass?.locale?.language || this.hass?.language || 'fr';
 
     // Get color for the alert level
@@ -438,14 +390,42 @@ export class VigieauCard extends LitElement {
       alertText = this._getDisplayLevel(alertLevel);
     }
 
+    // Progress bar only if enabled and numeric level available
+    let progressHtml: TemplateResult = html``;
+    if (this._config.show_progress && alertLevelNumeric !== null && !isNaN(Number(alertLevelNumeric))) {
+      const percent = Math.round((Number(alertLevelNumeric) / 4) * 100);
+      progressHtml = html`
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${percent}%"></div>
+        </div>
+        <span class="progress-percent">${percent}%</span>
+      `;
+    }
+
     const alertEntityId = this._config.alert_level_entity;
+
+    // Last updated timestamp
+    let lastUpdatedHtml: TemplateResult = html``;
+    if (this._config.show_last_updated && alertLevel) {
+      const entity = this._getState(this._config.alert_level_entity ?? null);
+      const lastUpdated = entity?.last_updated;
+      if (lastUpdated) {
+        const date = new Date(lastUpdated);
+        if (!isNaN(date.getTime())) {
+          lastUpdatedHtml = html`
+            <span class="last-updated" aria-label="${localizeCommon('last_updated', lang)}: ${lastUpdated}">
+              ${localizeCommon('last_updated_short', lang)}: ${date.toLocaleString(
+                lang,
+                { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+              )}
+            </span>
+          `;
+        }
+      }
+    }
 
     return html`
       <div class="card-header">
-        <div class="card-title">
-          <ha-icon icon="mdi:water-outline" class="card-title-icon" aria-hidden="true"></ha-icon>
-          <span class="card-title-text">Vigieau</span>
-        </div>
         <div
           class="alert-level ${color} ${entityNotFound ? 'entity-not-found' : ''}"
           role="button"
@@ -457,6 +437,8 @@ export class VigieauCard extends LitElement {
           <ha-icon icon="mdi:alert-circle-outline" style="color: ${color};" aria-hidden="true"></ha-icon>
           <span>${alertText}</span>
         </div>
+        ${progressHtml}
+        ${lastUpdatedHtml}
         <ha-icon
           icon="mdi:refresh"
           class="refresh-button"
@@ -486,12 +468,8 @@ export class VigieauCard extends LitElement {
       `;
     }
 
-    // Filter out entities not found in Home Assistant (never display unknown entities)
-    let restrictedEntries = Array.from(restrictions.entries()).filter(
-      (entry) => entry[1].entityFound
-    );
-
     // Filter out categories with no active restriction if configured
+    let restrictedEntries = Array.from(restrictions.entries());
     if (this._config.hide_no_restriction) {
       restrictedEntries = restrictedEntries.filter((entry) => {
         const info = entry[1];
@@ -752,6 +730,28 @@ export class VigieauCard extends LitElement {
         color: var(--warning-color, var(--primary-color));
       }
 
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: var(--secondary-background-color);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 8px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+      }
+
+      .progress-percent {
+        margin-top: 4px;
+        text-align: right;
+        font-size: 0.85em;
+        color: var(--secondary-text-color);
+      }
+
       .restrictions-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -841,23 +841,12 @@ export class VigieauCard extends LitElement {
         outline: none;
       }
 
-      /* Titre de la carte */
-      .card-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 600;
-        font-size: 1.1em;
-        color: var(--primary-text-color);
-        margin-right: auto;
+      /* Last updated timestamp */
+      .last-updated {
+        font-size: 0.75em;
+        color: var(--secondary-text-color);
+        margin-left: auto;
         white-space: nowrap;
-      }
-
-      .card-title-icon {
-        width: 20px;
-        height: 20px;
-        color: var(--primary-color);
-        flex-shrink: 0;
       }
 
       /* Compact mode */
