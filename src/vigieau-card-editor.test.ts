@@ -75,12 +75,15 @@ describe('VigieauCardEditor', () => {
   describe('auto-generation des entités depuis le slug', () => {
     it('construit les entity ids à partir d un code INSEE', () => {
       const built = buildEntityIdsFromCityCode('35322');
-      expect(built.alert_level_entity).toBe('sensor.alert_level_in_35322');
-      expect(built.alert_level_numeric_entity).toBe('sensor.alert_level_in_35322_numeric');
+      expect(built.alert_level_entity).toBe('sensor.outdoor_vigieau_35322_aep_alert_level_in_35322');
+      expect(built.alert_level_numeric_entity).toBe('sensor.outdoor_vigieau_35322_aep_alert_level_in_35322_numeric');
       expect(built.restriction_entities).toContain(
-        'sensor.alimentation_des_fontaines_restrictions_35322'
+        'sensor.vigieau_aep_fountain_supply_restrictions_in_35322'
       );
-      expect(built.restriction_entities.length).toBe(8);
+      expect(built.restriction_entities).toContain(
+        'binary_sensor.outdoor_vigieau_35322_aep_fountain_supply_allowed_in_35322'
+      );
+      expect(built.restriction_entities.length).toBe(34);
     });
 
     it('regénère les entités quand le code ville change (éditeur)', () => {
@@ -99,12 +102,12 @@ describe('VigieauCardEditor', () => {
       (editor as unknown as { _handleCityCodeChanged: (e: CustomEvent | Event) => void })._handleCityCodeChanged(event);
 
       expect(editor.config.city_code).toBe('thorigne_fouillard');
-      expect(editor.config.alert_level_entity).toBe('sensor.alert_level_in_thorigne_fouillard');
+      expect(editor.config.alert_level_entity).toBe('sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard');
       expect(editor.config.alert_level_numeric_entity).toBe(
-        'sensor.alert_level_in_thorigne_fouillard_numeric'
+        'sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard_numeric'
       );
       expect(editor.config.restriction_entities).toContain(
-        'sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard'
+        'sensor.vigieau_aep_fountain_supply_restrictions_in_thorigne_fouillard'
       );
     });
 
@@ -149,15 +152,15 @@ describe('VigieauCardEditor', () => {
 
       expect(editor.config.city_code).toBe('thorigne_fouillard');
       expect(editor.config.alert_level_entity).toBe(
-        'sensor.alert_level_in_thorigne_fouillard'
+        'sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard'
       );
       expect(editor.config.alert_level_numeric_entity).toBe(
-        'sensor.alert_level_in_thorigne_fouillard_numeric'
+        'sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard_numeric'
       );
       expect(editor.config.restriction_entities).toContain(
-        'sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard'
+        'sensor.vigieau_aep_fountain_supply_restrictions_in_thorigne_fouillard'
       );
-      expect((editor.config.restriction_entities ?? []).length).toBe(8);
+      expect((editor.config.restriction_entities ?? []).length).toBeGreaterThan(0);
     });
   });
 

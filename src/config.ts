@@ -18,6 +18,8 @@ export interface VigieauCardConfig {
   alert_level_numeric_entity?: string;
   /** Entity ids of the restriction sensors (e.g. sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard) */
   restriction_entities?: string[];
+  /** Entity ids of the restriction binary sensors (e.g. binary_sensor.vigieau-...) */
+  restriction_binary_entities?: string[];
   /** Show the alert level banner */
   show_alert_level?: boolean;
   /** Show the restrictions grid */
@@ -34,14 +36,23 @@ export interface VigieauCardConfig {
 
 /** Restriction categories known by the vigieau integration, used to auto-build entity ids from a city code. */
 export const RESTRICTION_CATEGORIES: string[] = [
-  'alimentation_des_fontaines',
-  'jardins_potagers',
-  'pelouses',
-  'lavage_des_vehicules',
-  'piscines',
-  'voiries_trottoirs',
-  'toitures_facades',
-  'plans_deau',
+  'fountain_supply',
+  'lawn_watering',
+  'pool_draining_and_filling',
+  'vegetable_garden_watering',
+  'vehicle_washing',
+  'animal_use',
+  'canal_water_withdrawal',
+  'golf_course_watering',
+  'market_gardening_and_crops',
+  'pond_filling_draining',
+  'river_navigation',
+  'river_works',
+  'road_and_pavement_watering',
+  'roof_and_facade_washing',
+  'specific_restriction',
+  'tree_and_plant_watering',
+  'watercraft_washing',
 ];
 
 /** Default configuration applied when no value is provided. */
@@ -51,6 +62,7 @@ export const DEFAULT_CONFIG: Required<VigieauCardConfig> = {
   alert_level_entity: '',
   alert_level_numeric_entity: '',
   restriction_entities: [],
+  restriction_binary_entities: [],
   show_alert_level: true,
   show_restrictions: true,
   compact: false,
@@ -68,14 +80,20 @@ export function buildEntityIdsFromCityCode(cityCode: string): {
   alert_level_entity: string;
   alert_level_numeric_entity: string;
   restriction_entities: string[];
+  restriction_binary_entities: string[];
 } {
   const slug = cityCode.toLowerCase().trim();
+  const sensors = RESTRICTION_CATEGORIES.map(
+    (cat) => `sensor.vigieau_aep_${cat}_restrictions_in_${slug}`
+  );
+  const binarySensors = RESTRICTION_CATEGORIES.map(
+    (cat) => `binary_sensor.outdoor_vigieau_${slug}_aep_${cat}_allowed_in_${slug}`
+  );
   return {
-    alert_level_entity: `sensor.alert_level_in_${slug}`,
-    alert_level_numeric_entity: `sensor.alert_level_in_${slug}_numeric`,
-    restriction_entities: RESTRICTION_CATEGORIES.map(
-      (cat) => `sensor.${cat}_restrictions_${slug}`
-    ),
+    alert_level_entity: `sensor.outdoor_vigieau_${slug}_aep_alert_level_in_${slug}`,
+    alert_level_numeric_entity: `sensor.outdoor_vigieau_${slug}_aep_alert_level_in_${slug}_numeric`,
+    restriction_entities: [...sensors, ...binarySensors],
+    restriction_binary_entities: binarySensors,
   };
 }
 
@@ -100,7 +118,11 @@ export function applyCityCodeToConfig(
       resolvedConfig.alert_level_numeric_entity = built.alert_level_numeric_entity;
     }
     if (!config.restriction_entities || config.restriction_entities.length === 0) {
-      resolvedConfig.restriction_entities = built.restriction_entities;
+      // Fusion sensors + binary sensors dans une seule liste (l'editor accepte les deux domaines)
+      resolvedConfig.restriction_entities = [
+        ...built.restriction_entities,
+        ...built.restriction_binary_entities,
+      ];
     }
   }
   return resolvedConfig;

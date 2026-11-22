@@ -89,7 +89,7 @@ export function getCategoryDisplayName(category: string, lang: string): string {
  */
 export function getCategoryIcon(category: string): string {
   const icons: Record<string, string> = {
-    // French category names from the vigieau component
+    // French category names from the vigieau integration (legacy)
     alimentation_des_fontaines: 'mdi:fountain',
     jardins_potagers: 'mdi:flower',
     pelouses: 'mdi:grass',
@@ -98,6 +98,24 @@ export function getCategoryIcon(category: string): string {
     voiries_trottoirs: 'mdi:road',
     toitures_facades: 'mdi:roof',
     plans_deau: 'mdi:water',
+    // New English category keys from the vigieau integration
+    fountain_supply: 'mdi:fountain',
+    lawn_watering: 'mdi:grass',
+    pool_draining_and_filling: 'mdi:pool',
+    vegetable_garden_watering: 'mdi:watering-can',
+    vehicle_washing: 'mdi:car-wash',
+    animal_use: 'mdi:cow',
+    canal_water_withdrawal: 'mdi:water-pump',
+    golf_course_watering: 'mdi:golf',
+    market_gardening_and_crops: 'mdi:corn',
+    pond_filling_draining: 'mdi:waves',
+    river_navigation: 'mdi:ferry',
+    river_works: 'mdi:hydro-power',
+    road_and_pavement_watering: 'mdi:road',
+    roof_and_facade_washing: 'mdi:home-roof',
+    specific_restriction: 'mdi:alert',
+    tree_and_plant_watering: 'mdi:tree',
+    watercraft_washing: 'mdi:sail-boat',
     // English aliases (fallback)
     fountains: 'mdi:fountain',
     gardens: 'mdi:flower',
@@ -121,7 +139,7 @@ export class VigieauCard extends LitElement {
   @state() private _entities: {
     alert_level: string | null;
     alert_level_numeric: string | null;
-    restrictions: Map<string, { state: string; entity_id: string; attributes: Record<string, unknown>; category: string; entityFound: boolean }>;
+    restrictions: Map<string, { state: string; entity_id: string; attributes: Record<string, unknown>; category: string; entityFound: boolean; isBinary: boolean }>;
   } = {
     alert_level: null,
     alert_level_numeric: null,
@@ -243,7 +261,10 @@ export class VigieauCard extends LitElement {
    * @returns Array of entity IDs
    */
   private _getRestrictionEntities(): string[] {
-    return this._config.restriction_entities || [];
+    return [
+      ...(this._config.restriction_entities || []),
+      ...(this._config.restriction_binary_entities || []),
+    ];
   }
 
   /**
@@ -263,7 +284,8 @@ export class VigieauCard extends LitElement {
  * @param attributes - The entity attributes
  * @returns The color or null if not found
  */
-  private _getColorFromAttributes(attributes: Record<string, unknown>): string | null {
+  private _getColorFromAttributes(attributes: Record<string, unknown> | undefined | null): string | null {
+    if (!attributes) return null;
     const couleur = attributes['Couleur'] ?? attributes['couleur'];
     if (couleur && typeof couleur === 'string') return couleur;
     return null;
@@ -271,16 +293,31 @@ export class VigieauCard extends LitElement {
 
   /**
    * Extract the category name from an entity id for display purposes.
+   * Supports both the legacy vigieau naming and the new outdoor_vigieau / vigieau_aep naming.
    * sensor.{categorie}_restrictions_{ville}  -> categorie
+   * sensor.vigieau_aep_{categorie}_restrictions_in_{ville} -> categorie
    * binary_sensor.vigieau-{categorie}-...   -> categorie (after vigieau-)
+   * binary_sensor.outdoor_vigieau_{ville}_aep_{categorie}_allowed_in_{ville} -> categorie
    * @param entityId - The entity ID
    * @returns The category key or empty string if it cannot be extracted
    */
   private _extractCategoryFromEntityId(entityId: string): string {
+    // New vigieau naming: sensor.vigieau_aep_{category}_restrictions_in_{city}
+    const sensorNewMatch = entityId.match(/^sensor\.vigieau_aep_(.+)_restrictions_in_/);
+    if (sensorNewMatch) {
+      return sensorNewMatch[1];
+    }
+    // New vigieau naming: binary_sensor.outdoor_vigieau_{city}_aep_{category}_allowed_in_{city}
+    const binaryNewMatch = entityId.match(/^binary_sensor\.outdoor_vigieau_.+_aep_(.+)_allowed_in_/);
+    if (binaryNewMatch) {
+      return binaryNewMatch[1];
+    }
+    // Legacy vigieau naming: sensor.{category}_restrictions_{city}
     const sensorMatch = entityId.match(/^sensor\.(.+)_restrictions_/);
     if (sensorMatch) {
       return sensorMatch[1];
     }
+    // Legacy vigieau naming: binary_sensor.vigieau-{category}-...
     const binaryMatch = entityId.match(/^binary_sensor\.vigieau-(.+)-/);
     if (binaryMatch) {
       return binaryMatch[1];
@@ -333,6 +370,7 @@ export class VigieauCard extends LitElement {
         attributes: state?.attributes ?? {},
         category,
         entityFound: Boolean(state),
+        isBinary: this._isBinarySensor(entityId),
       });
     }
 
@@ -368,11 +406,17 @@ export class VigieauCard extends LitElement {
     const alertLevel = this._entities.alert_level;
     const lang = this.hass?.locale?.language || this.hass?.language || 'fr';
 
-    // Get color for the alert level
-    const color = getRestrictionColor(alertLevel);
+    // Get color for the alert level: prefer the entity attribute 'Couleur', then fall back to text mapping
+    let color = getRestrictionColor(alertLevel);
+    const alertEntityState = this._getState(this._config.alert_level_entity ?? null);
+    const attrColor = alertEntityState
+      ? this._getColorFromAttributes(alertEntityState.attributes)
+      : null;
+    if (attrColor) {
+      color = attrColor;
+    }
 
     // Détecter si l'entité est configurée mais introuvable dans Home Assistant
-    const alertEntityState = this._getState(this._config.alert_level_entity ?? null);
     const entityNotFound = Boolean(this._config.alert_level_entity) && !alertEntityState;
 
     let alertText: string;
@@ -397,7 +441,7 @@ export class VigieauCard extends LitElement {
     // Active restrictions counter
     let activeCountHtml: TemplateResult = html``;
     if (this._config.show_restrictions) {
-      const activeCount = (this._config.restriction_entities ?? []).filter((eid) => {
+      const activeCount = this._getRestrictionEntities().filter((eid) => {
         const info = this._entities.restrictions.get(eid);
         return info && !this._isNoRestriction(info.state);
       }).length;
@@ -508,6 +552,15 @@ export class VigieauCard extends LitElement {
         const nextEnd = attributes['next_restriction_end'];
         if (nextStart && nextEnd) {
           title += ` - ${localizeCommon('next_restriction', lang)}: ${nextStart} / ${nextEnd}`;
+        }
+        // Usage details from the vigieau integration (e.g. "usage: Arrosage des pelouses… Interdit.")
+        const usageEntries = Object.entries(attributes).filter(([key]) =>
+          key.startsWith('usage: ')
+        );
+        for (const [key, value] of usageEntries) {
+          const usageText = key.replace(/^usage:\s*/, '');
+          const usageValue = typeof value === 'string' ? value : String(value);
+          title += ` - ${usageText}: ${usageValue}`;
         }
       }
 

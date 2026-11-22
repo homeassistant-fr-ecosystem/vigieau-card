@@ -149,7 +149,7 @@ export class VigieauCardEditor extends LitElement {
               this._config.alert_level_entity = e.detail.value as string;
               this._notifyConfigChanged();
             }}
-            .placeholder=${isFr ? 'Ex: sensor.alert_level_in_thorigne_fouillard' : 'Ex: sensor.alert_level_in_thorigne_fouillard'}
+            .placeholder=${isFr ? 'Ex: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard' : 'Ex: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard'}
           ></ha-entity-picker>
         </div>
 
@@ -166,7 +166,7 @@ export class VigieauCardEditor extends LitElement {
               this._config.alert_level_numeric_entity = e.detail.value as string;
               this._notifyConfigChanged();
             }}
-            .placeholder=${isFr ? 'Ex: sensor.alert_level_in_thorigne_fouillard_numeric' : 'Ex: sensor.alert_level_in_thorigne_fouillard_numeric'}
+            .placeholder=${isFr ? 'Ex: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard_numeric' : 'Ex: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard_numeric'}
           ></ha-entity-picker>
         </div>
 
@@ -184,7 +184,7 @@ export class VigieauCardEditor extends LitElement {
               this._config.restriction_entities = e.detail.value as string[];
               this._notifyConfigChanged();
             }}
-            .placeholder=${isFr ? 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard ou binary_sensor.vigieau_...' : 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard or binary_sensor.vigieau_...'}
+            .placeholder=${isFr ? 'Ex: sensor.vigieau_aep_fountain_supply_restrictions_in_thorigne_fouillard ou binary_sensor.outdoor_vigieau_thorigne_fouillard_aep_fountain_supply_allowed_in_thorigne_fouillard' : 'Ex: sensor.vigieau_aep_fountain_supply_restrictions_in_thorigne_fouillard or binary_sensor.outdoor_vigieau_thorigne_fouillard_aep_fountain_supply_allowed_in_thorigne_fouillard'}
           ></ha-entity-picker>
         </div>
 

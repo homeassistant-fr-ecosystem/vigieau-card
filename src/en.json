@@ -38,5 +38,22 @@
   "categorie.piscines": "Pools",
   "categorie.voiries_trottoirs": "Roads and sidewalks",
   "categorie.toitures_facades": "Roofs and facades",
-  "categorie.plans_deau": "Ponds"
+  "categorie.plans_deau": "Ponds",
+  "categorie.fountain_supply": "Fountain supply",
+  "categorie.lawn_watering": "Lawn watering",
+  "categorie.pool_draining_and_filling": "Pool draining and filling",
+  "categorie.vegetable_garden_watering": "Vegetable garden watering",
+  "categorie.vehicle_washing": "Vehicle washing",
+  "categorie.animal_use": "Animal use",
+  "categorie.canal_water_withdrawal": "Canal water withdrawal",
+  "categorie.golf_course_watering": "Golf course watering",
+  "categorie.market_gardening_and_crops": "Market gardening and crops",
+  "categorie.pond_filling_draining": "Pond filling and draining",
+  "categorie.river_navigation": "River navigation",
+  "categorie.river_works": "River works",
+  "categorie.road_and_pavement_watering": "Road and pavement watering",
+  "categorie.roof_and_facade_washing": "Roof and facade washing",
+  "categorie.specific_restriction": "Specific restriction",
+  "categorie.tree_and_plant_watering": "Tree and plant watering",
+  "categorie.watercraft_washing": "Watercraft washing"
 }

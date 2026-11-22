@@ -38,5 +38,22 @@
   "categorie.piscines": "Piscines",
   "categorie.voiries_trottoirs": "Voiries et trottoirs",
   "categorie.toitures_facades": "Toitures et façades",
-  "categorie.plans_deau": "Plans d'eau"
+  "categorie.plans_deau": "Plans d'eau",
+  "categorie.fountain_supply": "Alimentation des fontaines",
+  "categorie.lawn_watering": "Arrosage des pelouses",
+  "categorie.pool_draining_and_filling": "Vidange et remplissage des piscines",
+  "categorie.vegetable_garden_watering": "Arrosage des potagers",
+  "categorie.vehicle_washing": "Lavage des véhicules",
+  "categorie.animal_use": "Usage pour animaux",
+  "categorie.canal_water_withdrawal": "Prélèvement en canaux",
+  "categorie.golf_course_watering": "Arrosage des golfs",
+  "categorie.market_gardening_and_crops": "Maraîchage et cultures",
+  "categorie.pond_filling_draining": "Remplissage et vidange des plans d'eau",
+  "categorie.river_navigation": "Navigation fluviale",
+  "categorie.river_works": "Travaux sur cours d'eau",
+  "categorie.road_and_pavement_watering": "Arrosage et nettoyage de la voirie",
+  "categorie.roof_and_facade_washing": "Nettoyage des toitures et façades",
+  "categorie.specific_restriction": "Restriction spécifique",
+  "categorie.tree_and_plant_watering": "Arrosage des arbres et plantes",
+  "categorie.watercraft_washing": "Lavage des embarcations"
 }

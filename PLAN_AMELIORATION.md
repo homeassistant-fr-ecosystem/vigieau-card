@@ -5,13 +5,30 @@
 
 ---
 
+## 0. Adaptation au nouveau schéma d'entités vigieau (TERMINÉ)
+
+Les entités observées sur votre installation utilisent un nouveau schéma de nommage (`outdoor_vigieau_`, `_aep_`, clés de catégorie en anglais) qui diffère du schéma legacy (`sensor.alert_level_in_`, `sensor.{cat}_restrictions_`, clés françaises).
+
+Les changements suivants ont été appliqués (branche `feat/adapt-nouveau-schema-entites-vigieau`) :
+
+- **config.ts** : `RESTRICTION_CATEGORIES` passe aux 17 catégories anglaises (`fountain_supply`, `lawn_watering`, `pool_draining_and_filling`, `vehicle_washing`, `animal_use`, `canal_water_withdrawal`, `golf_course_watering`, `market_gardening_and_crops`, `pond_filling_draining`, `river_navigation`, `river_works`, `road_and_pavement_watering`, `roof_and_facade_washing`, `specific_restriction`, `tree_and_plant_watering`, `watercraft_washing`). `buildEntityIdsFromCityCode` génère les entity IDs du nouveau schéma (`sensor.outdoor_vigieau_{slug}_aep_alert_level_in_{slug}`, `sensor.vigieau_aep_{cat}_restrictions_in_{slug}`, `binary_sensor.outdoor_vigieau_{slug}_aep_{cat}_allowed_in_{slug}`). Ajout de `restriction_binary_entities` dans la config.
+- **vigieau-card.ts** : `_extractCategoryFromEntityId` supporte les deux schémas (legacy + nouveau). `_renderHeader` utilise l'attribut `Couleur` de l'entité pour la couleur de l'alerte. `_renderRestrictions` affiche les attributs `usage:` (détails de l'arrêté). Prise en compte des `binary_sensor` dans le comptage des restrictions actives.
+- **fr.json / en.json** : ajout des 17 traductions de catégories, rétrocompatibilité conservée avec les anciennes clés françaises.
+- **vigieau-card-editor.ts** : placeholders mis à jour avec les nouveaux noms d'entités.
+- **README.md** : documentation du nouveau schéma d'entités et exemples YAML mis à jour.
+- **Tests** : 44 tests passés (unitaires + rendu + éditeur).
+
+---
+
+---
+
 ## 1. Critique (P0) — À faire en premier
 
 ### P0-1 : Ajouter une suite de tests
 Le projet n'a **aucun test**. C'est le plus gros risque de régression.
 
-- [ ] Ajouter **Vitest** (ou Jest) + `@testing-library` pour tester la logique pure (`_getRestrictionColor`, `_getCategoryDisplayName`, `_buildEntityIdsFromCityCode`, parsage d'entités).
-- [ ] Ajouter un test de rendu Lit (via `lit/testing` ou `@web/test-runner`) pour vérifier que le card affiche bien les sections selon la config.
+- [x] Ajouter **Vitest** (déjà présent) + tests pour la logique pure (`_getRestrictionColor`, `_getCategoryDisplayName`, `_buildEntityIdsFromCityCode`, parsage d'entités).
+- [x] Ajouter un test de rendu Lit (via `vitest` + happy-dom) pour vérifier que le card affiche bien les sections selon la config.
 - [ ] Ajouter une étape `test` dans `.github/workflows/ci.yml` (après lint, avant build).
 - [ ] Cible : **≥ 80 % de couverture** sur le code non-DOM.
 
@@ -120,8 +137,9 @@ Quand une entité configurée n'existe pas ou est `unavailable`/`unknown`, le ca
 
 | Sprint | Thème | Tickets |
 |--------|-------|---------|
+| **Sprint 0** | Adaptation entités vigieau (TERMINÉ) | P0 (nouveau schéma, catégorie, couleur, usage, binary_sensor) |
 | **Sprint 1** | Fondations | P0-1 (tests), P0-2 (semantic-release), P0-3 (dependabot) |
-| **Sprint 2** | Qualité code | P1-1 (traductions), P1-2 (états d'erreur), P1-3 (parsage entités), P1-5 (lint/TS strict) |
+| **Sprint 2** | Qualité code | P1-1 (traductions), P1-2 (états d'erreur), P1-5 (lint/TS strict) |
 | **Sprint 3** | UX / Fonctions | P2-1 (a11y), P2-2 (horodatage, filtre, tri), P2-3 (thème compact) |
 | **Sprint 4** | Documentation / release | P3-1 (docs), P3-2 (packaging), P3-3 (i18n), P3-4 (bundle) |
 

@@ -74,11 +74,11 @@ Vous pouvez aussi configurer la carte directement en YAML :
 
 ```yaml
 type: custom:vigieau-card
-alert_level_entity: sensor.alert_level_in_thorigne_fouillard
+alert_level_entity: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard
 restriction_entities:
-  - sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard
-  - sensor.jardins_potagers_restrictions_thorigne_fouillard
-  - sensor.pelouses_restrictions_thorigne_fouillard
+  - sensor.vigieau_aep_fountain_supply_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_vegetable_garden_watering_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_lawn_watering_restrictions_in_thorigne_fouillard
 show_alert_level: true
 show_restrictions: true
 show_progress: false
@@ -88,17 +88,19 @@ show_progress: false
 
 ```yaml
 type: custom:vigieau-card
-alert_level_entity: sensor.alert_level_in_thorigne_fouillard
-alert_level_numeric_entity: sensor.alert_level_numeric_thorigne_fouillard
+alert_level_entity: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard
+alert_level_numeric_entity: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard_numeric
 restriction_entities:
-  - sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard
-  - sensor.jardins_potagers_restrictions_thorigne_fouillard
-  - sensor.pelouses_restrictions_thorigne_fouillard
-  - sensor.lavage_des_vehicules_restrictions_thorigne_fouillard
-  - sensor.piscines_restrictions_thorigne_fouillard
-  - sensor.voiries_trottoirs_restrictions_thorigne_fouillard
-  - sensor.toitures_facades_restrictions_thorigne_fouillard
-  - sensor.plans_deau_restrictions_thorigne_fouillard
+  - sensor.vigieau_aep_fountain_supply_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_vegetable_garden_watering_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_pelouses_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_lavage_des_vehicules_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_piscines_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_voiries_trottoirs_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_toitures_facades_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_plans_deau_restrictions_in_thorigne_fouillard
+  - binary_sensor.outdoor_vigieau_thorigne_fouillard_aep_fountain_supply_allowed_in_thorigne_fouillard
+  - binary_sensor.outdoor_vigieau_thorigne_fouillard_aep_lawn_watering_allowed_in_thorigne_fouillard
 show_alert_level: true
 show_restrictions: true
 show_progress: false
@@ -126,9 +128,17 @@ hide_no_restriction: false
 
 La carte utilise les entités créées par l'intégration [kamaradclimber/vigieau](https://github.com/kamaradclimber/vigieau) pour votre commune. Sélectionnez-les explicitement dans l'éditeur de carte :
 
-- **Niveau d'alerte** : `sensor.alert_level_in_{ville_slug}` (ex. `sensor.alert_level_in_thorigne_fouillard`)
-- **Niveau numérique** : `sensor.alert_level_numeric_{ville_slug}` (optionnel, ex. `sensor.alert_level_numeric_thorigne_fouillard`)
-- **Restrictions par catégorie** : `sensor.{categorie}_restrictions_{ville_slug}` (ex. `sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard`)
+- **Niveau d'alerte** : `sensor.outdoor_vigieau_{ville}_aep_alert_level_in_{ville}` (ex. `sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard`)
+- **Niveau numérique** : `sensor.outdoor_vigieau_{ville}_aep_alert_level_in_{ville}_numeric` (optionnel)
+- **Restrictions par catégorie (sensors)** : `sensor.vigieau_aep_{categorie}_restrictions_in_{ville}`
+- **Restrictions par catégorie (binary sensors)** : `binary_sensor.outdoor_vigieau_{ville}_aep_{categorie}_allowed_in_{ville}`
+
+Catégories supportées :
+`fountain_supply`, `lawn_watering`, `pool_draining_and_filling`, `vegetable_garden_watering`,
+`vehicle_washing`, `animal_use`, `canal_water_withdrawal`, `golf_course_watering`,
+`market_gardening_and_crops`, `pond_filling_draining`, `river_navigation`, `river_works`,
+`road_and_pavement_watering`, `roof_and_facade_washing`, `specific_restriction`,
+`tree_and_plant_watering`, `watercraft_washing`.
 
 Ces entités sont créées automatiquement par l'intégration vigieau pour votre commune. Vous les trouverez dans **Paramètres** → **Appareils et services** → **Entités**.
 
@@ -138,11 +148,11 @@ Ces entités sont créées automatiquement par l'intégration vigieau pour votre
 
 ```yaml
 type: custom:vigieau-card
-alert_level_entity: sensor.alert_level_in_thorigne_fouillard
+alert_level_entity: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard
 restriction_entities:
-  - sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard
-  - sensor.jardins_potagers_restrictions_thorigne_fouillard
-  - sensor.pelouses_restrictions_thorigne_fouillard
+  - sensor.vigieau_aep_fountain_supply_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_vegetable_garden_watering_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_lawn_watering_restrictions_in_thorigne_fouillard
 show_alert_level: true
 show_restrictions: true
 show_progress: false
@@ -152,7 +162,7 @@ show_progress: false
 
 ```yaml
 type: custom:vigieau-card
-alert_level_entity: sensor.alert_level_in_thorigne_fouillard
+alert_level_entity: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard
 show_restrictions: false
 show_progress: false
 compact: true
@@ -162,14 +172,14 @@ compact: true
 
 ```yaml
 type: custom:vigieau-card
-alert_level_entity: sensor.alert_level_in_thorigne_fouillard
-alert_level_numeric_entity: sensor.alert_level_numeric_thorigne_fouillard
+alert_level_entity: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard
+alert_level_numeric_entity: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard_numeric
 restriction_entities:
-  - sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard
-  - sensor.jardins_potagers_restrictions_thorigne_fouillard
-  - sensor.pelouses_restrictions_thorigne_fouillard
-  - sensor.lavage_des_vehicules_restrictions_thorigne_fouillard
-  - sensor.piscines_restrictions_thorigne_fouillard
+  - sensor.vigieau_aep_fountain_supply_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_vegetable_garden_watering_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_pelouses_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_lavage_des_vehicules_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_piscines_restrictions_in_thorigne_fouillard
 show_alert_level: true
 show_restrictions: true
 show_progress: true
@@ -179,11 +189,11 @@ show_progress: true
 
 ```yaml
 type: custom:vigieau-card
-alert_level_entity: sensor.alert_level_in_thorigne_fouillard
+alert_level_entity: sensor.outdoor_vigieau_thorigne_fouillard_aep_alert_level_in_thorigne_fouillard
 restriction_entities:
-  - sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard
-  - sensor.jardins_potagers_restrictions_thorigne_fouillard
-  - sensor.pelouses_restrictions_thorigne_fouillard
+  - sensor.vigieau_aep_fountain_supply_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_vegetable_garden_watering_restrictions_in_thorigne_fouillard
+  - sensor.vigieau_aep_pelouses_restrictions_in_thorigne_fouillard
 hide_no_restriction: true
 ```
 

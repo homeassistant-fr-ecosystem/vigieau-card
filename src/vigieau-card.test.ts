@@ -45,23 +45,28 @@ describe('getRestrictionColor', () => {
 describe('buildEntityIdsFromCityCode', () => {
   it('construit les entity ids à partir d un code INSEE', () => {
     const result = buildEntityIdsFromCityCode('35322');
-    expect(result.alert_level_entity).toBe('sensor.alert_level_in_35322');
+    expect(result.alert_level_entity).toBe(
+      'sensor.outdoor_vigieau_35322_aep_alert_level_in_35322'
+    );
     expect(result.alert_level_numeric_entity).toBe(
-      'sensor.alert_level_in_35322_numeric'
+      'sensor.outdoor_vigieau_35322_aep_alert_level_in_35322_numeric'
     );
     expect(result.restriction_entities).toContain(
-      'sensor.alimentation_des_fontaines_restrictions_35322'
+      'sensor.vigieau_aep_fountain_supply_restrictions_in_35322'
     );
     expect(result.restriction_entities).toContain(
-      'sensor.piscines_restrictions_35322'
+      'sensor.vigieau_aep_pool_draining_and_filling_restrictions_in_35322'
     );
-    expect(result.restriction_entities.length).toBe(8);
+    expect(result.restriction_entities).toContain(
+      'binary_sensor.outdoor_vigieau_35322_aep_fountain_supply_allowed_in_35322'
+    );
+    expect(result.restriction_entities.length).toBe(34);
   });
 
   it('normalise le slug (minuscules, trim)', () => {
     const result = buildEntityIdsFromCityCode('  Thorigne-Fouillard  ');
     expect(result.alert_level_entity).toBe(
-      'sensor.alert_level_in_thorigne-fouillard'
+      'sensor.outdoor_vigieau_thorigne-fouillard_aep_alert_level_in_thorigne-fouillard'
     );
   });
 });
