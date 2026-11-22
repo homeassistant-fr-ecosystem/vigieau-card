@@ -5,11 +5,12 @@
 import { html, css, LitElement, TemplateResult } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { HomeAssistant } from 'custom-card-helpers';
+import { buildEntityIdsFromCityCode } from './vigieau-card';
 
 /**
  * Configuration interface for the editor
  */
-interface VigieauCardEditorConfig {
+export interface VigieauCardEditorConfig {
   type: string;
   city_code?: string;
   alert_level_entity?: string;
@@ -29,7 +30,7 @@ interface VigieauCardEditorConfig {
 @customElement('vigieau-card-editor')
 export class VigieauCardEditor extends LitElement {
   @property() private hass!: HomeAssistant;
-  @property() private _config: VigieauCardEditorConfig = {
+  private _config: VigieauCardEditorConfig = {
     type: 'custom:vigieau-card',
     city_code: '',
     alert_level_entity: '',
@@ -42,6 +43,19 @@ export class VigieauCardEditor extends LitElement {
     compact: false,
     hide_no_restriction: false,
   };
+
+  /**
+   * Public config exposed to Lovelace so user changes are persisted.
+   */
+  @property({ attribute: false })
+  get config(): VigieauCardEditorConfig {
+    return this._config;
+  }
+
+  set config(value: VigieauCardEditorConfig) {
+    this._config = { ...VigieauCardEditor.getStubConfig(), ...value };
+    this.requestUpdate();
+  }
 
   /**
    * Get default config
@@ -68,10 +82,45 @@ export class VigieauCardEditor extends LitElement {
    * @param config - The configuration object from Lovelace
    */
   setConfig(config: VigieauCardEditorConfig): void {
-    this._config = {
-      ...VigieauCardEditor.getStubConfig(),
-      ...config,
-    };
+    this.config = config;
+  }
+
+  /**
+   * Notify Lovelace and re-render when the config changes.
+   */
+  private _notifyConfigChanged(): void {
+    this.requestUpdate();
+    this.dispatchEvent(new CustomEvent('config-changed', {
+      detail: { config: { ...this._config } },
+      bubbles: true,
+      composed: true,
+    }));
+  }
+
+  /**
+   * Handle changes on the city code / slug textfield.
+   * Works with both 'value-changed' (ha-textfield) and 'input' (inner input) events.
+   * Auto-generates entity ids from the slug when entities are not set manually.
+   * @param event - The change event
+   */
+  private _handleCityCodeChanged(e: CustomEvent | Event): void {
+    const value = (e as CustomEvent).detail?.value ?? (e.target as HTMLInputElement).value;
+    this._config.city_code = value;
+    // Auto-générer les entités depuis le slug uniquement quand elles ne sont pas
+    // déjà renseignées manuellement, afin de préserver les sélections utilisateur.
+    if (value && value.trim()) {
+      const built = buildEntityIdsFromCityCode(value);
+      if (!this._config.alert_level_entity) {
+        this._config.alert_level_entity = built.alert_level_entity;
+      }
+      if (!this._config.alert_level_numeric_entity) {
+        this._config.alert_level_numeric_entity = built.alert_level_numeric_entity;
+      }
+      if (!this._config.restriction_entities || this._config.restriction_entities.length === 0) {
+        this._config.restriction_entities = built.restriction_entities;
+      }
+    }
+    this._notifyConfigChanged();
   }
 
   /**
@@ -96,18 +145,15 @@ export class VigieauCardEditor extends LitElement {
           <div style="font-weight: 500; margin-bottom: 8px;">
             ${isFr ? 'Code ville / slug' : 'City code or slug'}
           </div>
-          <ha-textfield
-            .hass=${this.hass}
-            .label=${isFr ? 'Code ville / slug' : 'City code or slug'}
+          <input
+            type="text"
             .value=${this._config.city_code || ''}
-            .helper=${isFr
-              ? 'Ex: 35322 (code INSEE) ou thorigne_fouillard (slug). Génère automatiquement les entités si elles ne sont pas saisies.'
-              : 'Ex: 35322 (INSEE code) or thorigne_fouillard (slug). Auto-generates entities when not set manually.'}
-            @value-changed=${(e: CustomEvent) => {
-              this._config.city_code = (e.target as HTMLInputElement).value;
-              this.requestUpdate();
-            }}
-          ></ha-textfield>
+            .placeholder=${isFr
+              ? 'Ex: 35322 ou thorigne_fouillard'
+              : 'Ex: 35322 or thorigne_fouillard'}
+            @input=${(e: Event) => this._handleCityCodeChanged(e)}
+            style="width: 100%; padding: 8px; font-size: 1rem; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--input-background-color, var(--card-background-color)); color: var(--primary-text-color); box-sizing: border-box;"
+          ></input>
           <div style="font-size: 0.8em; color: var(--secondary-text-color); margin-top: 4px;">
             ${isFr ? 'Laissez vide pour sélectionner les entités manuellement.' : 'Leave empty to select entities manually.'}
           </div>
@@ -124,7 +170,7 @@ export class VigieauCardEditor extends LitElement {
             .domain=${['sensor']}
             @value-changed=${(e: CustomEvent) => {
               this._config.alert_level_entity = e.detail.value as string;
-              this.requestUpdate();
+              this._notifyConfigChanged();
             }}
             .placeholder=${isFr ? 'Ex: sensor.alert_level_in_thorigne_fouillard' : 'Ex: sensor.alert_level_in_thorigne_fouillard'}
           ></ha-entity-picker>
@@ -141,7 +187,7 @@ export class VigieauCardEditor extends LitElement {
             .domain=${['sensor']}
             @value-changed=${(e: CustomEvent) => {
               this._config.alert_level_numeric_entity = e.detail.value as string;
-              this.requestUpdate();
+              this._notifyConfigChanged();
             }}
             .placeholder=${isFr ? 'Ex: sensor.alert_level_numeric_thorigne_fouillard' : 'Ex: sensor.alert_level_numeric_thorigne_fouillard'}
           ></ha-entity-picker>
@@ -159,7 +205,7 @@ export class VigieauCardEditor extends LitElement {
             .multiple=${true}
             @value-changed=${(e: CustomEvent) => {
               this._config.restriction_entities = e.detail.value as string[];
-              this.requestUpdate();
+              this._notifyConfigChanged();
             }}
             .placeholder=${isFr ? 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard' : 'Ex: sensor.alimentation_des_fontaines_restrictions_thorigne_fouillard'}
           ></ha-entity-picker>
@@ -169,6 +215,7 @@ export class VigieauCardEditor extends LitElement {
           .checked=${this._config.show_alert_level}
           @change=${(e: Event) => {
             this._config.show_alert_level = (e.target as HTMLInputElement).checked;
+            this._notifyConfigChanged();
           }}
         >
           ${isFr ? 'Afficher le niveau d\'alerte' : 'Show alert level'}
@@ -178,6 +225,7 @@ export class VigieauCardEditor extends LitElement {
           .checked=${this._config.show_restrictions}
           @change=${(e: Event) => {
             this._config.show_restrictions = (e.target as HTMLInputElement).checked;
+            this._notifyConfigChanged();
           }}
         >
           ${isFr ? 'Afficher les restrictions' : 'Show restrictions'}
@@ -187,6 +235,7 @@ export class VigieauCardEditor extends LitElement {
           .checked=${this._config.show_progress}
           @change=${(e: Event) => {
             this._config.show_progress = (e.target as HTMLInputElement).checked;
+            this._notifyConfigChanged();
           }}
         >
           ${isFr ? 'Afficher la barre de progression' : 'Show progress bar'}
@@ -196,6 +245,7 @@ export class VigieauCardEditor extends LitElement {
           .checked=${this._config.show_last_updated}
           @change=${(e: Event) => {
             this._config.show_last_updated = (e.target as HTMLInputElement).checked;
+            this._notifyConfigChanged();
           }}
         >
           ${isFr ? 'Afficher l\'horodatage' : 'Show last updated'}
@@ -205,6 +255,7 @@ export class VigieauCardEditor extends LitElement {
           .checked=${this._config.compact}
           @change=${(e: Event) => {
             this._config.compact = (e.target as HTMLInputElement).checked;
+            this._notifyConfigChanged();
           }}
         >
           ${isFr ? 'Taille compacte' : 'Compact size'}
@@ -214,6 +265,7 @@ export class VigieauCardEditor extends LitElement {
           .checked=${this._config.hide_no_restriction}
           @change=${(e: Event) => {
             this._config.hide_no_restriction = (e.target as HTMLInputElement).checked;
+            this._notifyConfigChanged();
           }}
         >
           ${isFr ? 'Masquer sans restriction' : 'Hide no restriction'}
@@ -224,10 +276,11 @@ export class VigieauCardEditor extends LitElement {
 
   static get styles() {
     return css`
-      ha-textfield,
+      input[type="text"],
       ha-entity-picker {
         margin-bottom: 16px;
         display: block;
+        width: 100%;
       }
 
       ha-switch {

@@ -343,7 +343,34 @@ export class VigieauCard extends LitElement {
   }
 
   /**
+   * Extract the category name from an entity id for display purposes.
+   * sensor.{categorie}_restrictions_{ville}  -> categorie
+   * binary_sensor.vigieau-{categorie}-...   -> categorie (after vigieau-)
+   * @param entityId - The entity ID
+   * @returns The category key or empty string if it cannot be extracted
+   */
+  private _extractCategoryFromEntityId(entityId: string): string {
+    const sensorMatch = entityId.match(/^sensor\.(.+)_restrictions_/);
+    if (sensorMatch) {
+      return sensorMatch[1];
+    }
+    const binaryMatch = entityId.match(/^binary_sensor\.vigieau-(.+)-/);
+    if (binaryMatch) {
+      return binaryMatch[1];
+    }
+    // Fallback: use the part after the domain and before the last _restrictions or suffix
+    const parts = entityId.split('.');
+    if (parts.length > 1) {
+      return parts[1].replace(/_restrictions.*$/, '');
+    }
+    return '';
+  }
+
+  /**
    * Update entity references based on the config and HA state
+   * All configured restriction entities are added to the map, even when they
+   * do not exist yet in hass.states, so they are displayed (as unknown) instead
+   * of being silently dropped.
    */
   private _updateEntities(): void {
     if (!this.hass || !this._config) return;
@@ -358,33 +385,26 @@ export class VigieauCard extends LitElement {
     const restrictionEntities = this._getRestrictionEntities();
     for (const entityId of restrictionEntities) {
       const state = this._getState(entityId);
+      let category = '';
       if (state) {
-        // Extract the category name from the entity ID for display purposes
-        // sensor.{categorie}_restrictions_{ville}  -> categorie
-        // binary_sensor.vigieau-{categorie}-...   -> categorie (after vigieau-)
-        let category = '';
-        const sensorMatch = entityId.match(/^sensor\.(.+)_restrictions_/);
-        if (sensorMatch) {
-          category = sensorMatch[1];
-        } else {
-          const binaryMatch = entityId.match(/^binary_sensor\.vigieau-(.+)-/);
-          if (binaryMatch) {
-            category = binaryMatch[1];
-          } else {
-            // Fallback: use the part after the domain and before the last _restrictions or suffix
-            const parts = entityId.split('.');
-            if (parts.length > 1) {
-              category = parts[1].replace(/_restrictions.*$/, '');
-            }
-          }
+        // Prefer the entity attribute (if the vigieau integration exposes it)
+        const catAttr = state.attributes;
+        if (catAttr && catAttr.categorie !== undefined) {
+          category = catAttr.categorie as string;
+        } else if (catAttr && catAttr.category !== undefined) {
+          category = catAttr.category as string;
         }
-        this._entities.restrictions.set(entityId, {
-          state: state.state,
-          entity_id: state.entity_id,
-          attributes: state.attributes,
-          category,
-        });
       }
+      // Fallback: extract from the entity id (works even when the entity has no state yet)
+      if (!category) {
+        category = this._extractCategoryFromEntityId(entityId);
+      }
+      this._entities.restrictions.set(entityId, {
+        state: state?.state ?? '',
+        entity_id: state?.entity_id ?? entityId,
+        attributes: state?.attributes ?? {},
+        category,
+      });
     }
 
     // Request update to re-render
@@ -520,9 +540,13 @@ export class VigieauCard extends LitElement {
     }
 
     // Filter out categories with no active restriction if configured
-    const restrictedEntries = this._config.hide_no_restriction
-      ? Array.from(restrictions.entries()).filter(([, info]) => !this._isNoRestriction(info.state))
-      : Array.from(restrictions.entries());
+    let restrictedEntries = Array.from(restrictions.entries());
+    if (this._config.hide_no_restriction) {
+      restrictedEntries = restrictedEntries.filter((entry) => {
+        const info = entry[1];
+        return !this._isNoRestriction(info.state);
+      });
+    }
 
     if (restrictedEntries.length === 0) {
       return html`
@@ -635,7 +659,14 @@ export class VigieauCard extends LitElement {
   private _isNoRestriction(state: string | null): boolean {
     if (!state) return true;
     const lower = state.toLowerCase().trim();
-    return lower === 'aucune restriction' || lower === 'vigilance' || lower === 'aucune';
+    return (
+      lower === 'aucune restriction' ||
+      lower === 'vigilance' ||
+      lower === 'aucune' ||
+      lower === 'normale' ||
+      lower === 'aucun' ||
+      lower === 'rien'
+    );
   }
 
   /**
