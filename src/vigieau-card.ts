@@ -519,8 +519,12 @@ export class VigieauCard extends LitElement {
       `;
     }
 
+    // Filter out entities not found in Home Assistant (never display unknown entities)
+    let restrictedEntries = Array.from(restrictions.entries()).filter(
+      (entry) => entry[1].entityFound
+    );
+
     // Filter out categories with no active restriction if configured
-    let restrictedEntries = Array.from(restrictions.entries());
     if (this._config.hide_no_restriction) {
       restrictedEntries = restrictedEntries.filter((entry) => {
         const info = entry[1];

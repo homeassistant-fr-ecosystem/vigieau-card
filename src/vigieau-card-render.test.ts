@@ -182,7 +182,7 @@ describe('VigieauCard rendering', () => {
     expect(alertLevel?.classList.contains('entity-not-found')).toBe(true);
   });
 
-  it('affiche "Entité introuvable" pour une restriction absente', async () => {
+  it('ne affiche pas une restriction absente (entité introuvable)', async () => {
     const card = await mountCard(
       {
         alert_level_entity: 'sensor.alert_level_in_test',
@@ -190,9 +190,8 @@ describe('VigieauCard rendering', () => {
       },
       { 'sensor.alert_level_in_test': { state: 'vigilance' } }
     );
-    const item = card.shadowRoot?.querySelector('.restriction-item.entity-not-found');
-    expect(item).not.toBeNull();
-    expect(item?.textContent).toContain('introuvable');
+    const item = card.shadowRoot?.querySelector('.restriction-item');
+    expect(item).toBeNull();
   });
 
   it('affiche une restriction normalement quand elle existe', async () => {
