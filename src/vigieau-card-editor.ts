@@ -24,7 +24,6 @@ export interface VigieauCardEditorConfig {
   compact?: boolean;
   hide_no_restriction?: boolean;
   show_city?: boolean;
-  show_timestamp?: boolean;
   /** Tri des restrictions : 'config' (ordre config), 'alpha' (alphabétique), 'severity' (sévérité) */
   sort?: 'config' | 'alpha' | 'severity';
 }
@@ -46,7 +45,6 @@ export class VigieauCardEditor extends LitElement {
     compact: false,
     hide_no_restriction: false,
     show_city: true,
-    show_timestamp: true,
   };
 
   /**
@@ -240,15 +238,6 @@ export class VigieauCardEditor extends LitElement {
           ${isFr ? 'Afficher la ville' : 'Show city'}
         </ha-switch>
 
-        <ha-switch
-          .checked=${this._config.show_timestamp}
-          @change=${(e: Event) => {
-            this._config.show_timestamp = (e.target as HTMLInputElement).checked;
-            this._notifyConfigChanged();
-          }}
-        >
-          ${isFr ? 'Afficher l\'heure de mise à jour' : 'Show last update time'}
-        </ha-switch>
       </ha-settings>
     `;
   }

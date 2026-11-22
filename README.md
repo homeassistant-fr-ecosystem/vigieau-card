@@ -17,7 +17,6 @@ La carte affiche le niveau d'alerte actuel (avec code couleur), la liste des res
 - 📱 **Responsive** : fonctionne sur mobile et desktop
 - 🇫🇷🇬🇧 **Traductions** : français et anglais intégrés
 - ⚙️ **Éditeur UI** : configuration visuelle complète dans Home Assistant
-- 🕒 **Horodatage** : affiche la dernière mise à jour de l'entité niveau d'alerte
 - 📐 **Taille compacte** : affichage réduit pour les petits tableaux de bord
 - 🔍 **Filtre** : masque les catégories sans restriction active
 
@@ -103,7 +102,6 @@ restriction_entities:
 show_alert_level: true
 show_restrictions: true
 show_progress: false
-show_last_updated: true
 compact: false
 hide_no_restriction: false
 ```
@@ -120,7 +118,6 @@ hide_no_restriction: false
 | `show_alert_level` | boolean | `true` | Affiche la bannière de niveau d'alerte |
 | `show_restrictions` | boolean | `true` | Affiche la grille des restrictions par catégorie |
 | `show_progress` | boolean | `false` | Affiche la barre de progression numérique (0-4) |
-| `show_last_updated` | boolean | `false` | Affiche l'horodatage de la dernière mise à jour |
 | `compact` | boolean | `false` | Affiche la carte en taille compacte (padding réduit) |
 | `hide_no_restriction` | boolean | `false` | Masque les catégories sans restriction active (niveau « aucune restriction » / « vigilance ») |
 | `sort` | string | `config` | Tri des restrictions : `config` (ordre de config), `alpha` (alphabétique), `severity` (par sévérité) |
@@ -176,7 +173,6 @@ restriction_entities:
 show_alert_level: true
 show_restrictions: true
 show_progress: true
-show_last_updated: true
 ```
 
 ### Filtrer uniquement les restrictions actives
@@ -208,6 +204,10 @@ L'entity ID configuré n'existe pas dans Home Assistant. Vérifiez l'orthographe
 ### Une restriction ne s'affiche pas
 
 Vérifiez que l'entity ID est correct et que l'entité existe dans **Paramètres** → **Appareils et services** → **Entités**. Si vous utilisez `hide_no_restriction: true`, les catégories au niveau « aucune restriction » ou « vigilance » sont masquées.
+
+### Une entité affiche « Entité introuvable » avec un fond grisé
+
+L'entity ID configuré n'existe pas dans Home Assistant. La carte l'affiche maintenant avec un état visuel d'erreur (icône et texte grisés) au lieu de la masquer, pour vous signaler le problème. Vérifiez l'orthographe de l'entity ID dans l'éditeur de carte et assurez-vous que l'intégration vigieau a créé l'entité. Vous pouvez utiliser le bouton de rafraîchissement (icône circulaire) de la carte pour relancer la lecture des états après avoir corrigé la configuration.
 
 ### La carte ne se met pas à jour
 

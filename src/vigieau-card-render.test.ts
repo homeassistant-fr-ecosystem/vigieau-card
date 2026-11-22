@@ -32,7 +32,6 @@ async function mountCard(config: Partial<VigieauCardConfig>, entities: Record<st
     restriction_entities: [],
     show_alert_level: true,
     show_restrictions: true,
-    show_progress: false,
     compact: false,
     hide_no_restriction: false,
     ...config,
@@ -111,24 +110,6 @@ describe('VigieauCard rendering', () => {
     expect(card.shadowRoot?.textContent).toContain('Piscines');
   });
 
-  it('affiche la barre de progression quand show_progress et niveau numérique', async () => {
-    const card = await mountCard(
-      {
-        alert_level_entity: 'sensor.alert_level_in_test',
-        alert_level_numeric_entity: 'sensor.alert_level_numeric_test',
-        show_progress: true,
-      },
-      {
-        'sensor.alert_level_in_test': { state: 'alerte' },
-        'sensor.alert_level_numeric_test': { state: '2' },
-      }
-    );
-    const progressBar = card.shadowRoot?.querySelector('.progress-bar');
-    expect(progressBar).not.toBeNull();
-    const fill = card.shadowRoot?.querySelector('.progress-fill') as HTMLElement | null;
-    expect(fill?.style.width).toBe('50%');
-  });
-
   it('applique la classe compact sur ha-card quand compact est activé', async () => {
     const card = await mountCard(
       { alert_level_entity: 'sensor.alert_level_in_test', compact: true },
@@ -167,7 +148,7 @@ describe('VigieauCard rendering', () => {
     expect(alertLevel?.classList.contains('entity-not-found')).toBe(true);
   });
 
-  it('n affiche pas les restrictions "entité introuvable"', async () => {
+  it('affiche les restrictions "entité introuvable" avec un etat visuel d erreur', async () => {
     const card = await mountCard(
       {
         alert_level_entity: 'sensor.alert_level_in_test',
@@ -176,7 +157,8 @@ describe('VigieauCard rendering', () => {
       { 'sensor.alert_level_in_test': { state: 'vigilance' } }
     );
     const item = card.shadowRoot?.querySelector('.restriction-item.entity-not-found');
-    expect(item).toBeNull();
+    expect(item).not.toBeNull();
+    expect(item?.textContent).toContain('introuvable');
   });
 
   it('affiche une restriction normalement quand elle existe', async () => {

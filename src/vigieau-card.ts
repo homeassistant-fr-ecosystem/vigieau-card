@@ -121,12 +121,10 @@ export class VigieauCard extends LitElement {
   @state() private _entities: {
     alert_level: string | null;
     alert_level_numeric: string | null;
-    last_updated: string | null;
     restrictions: Map<string, { state: string; entity_id: string; attributes: Record<string, unknown>; category: string; entityFound: boolean }>;
   } = {
     alert_level: null,
     alert_level_numeric: null,
-    last_updated: null,
     restrictions: new Map(),
   };
 
@@ -144,7 +142,6 @@ export class VigieauCard extends LitElement {
       restriction_entities: [],
       show_alert_level: true,
       show_restrictions: true,
-      show_progress: false,
       compact: false,
       hide_no_restriction: false,
     };
@@ -309,7 +306,6 @@ export class VigieauCard extends LitElement {
     const alertEntity = this._getState(this._config.alert_level_entity ?? null);
     this._entities.alert_level = alertEntity?.state || null;
     this._entities.alert_level_numeric = this._getState(this._config.alert_level_numeric_entity ?? null)?.state || null;
-    this._entities.last_updated = alertEntity?.last_updated ?? null;
 
     // Update restriction entities
     // Index by entity_id (unique) instead of category to avoid collisions between cities
@@ -370,8 +366,6 @@ export class VigieauCard extends LitElement {
    */
   private _renderHeader(): TemplateResult {
     const alertLevel = this._entities.alert_level;
-    const alertLevelNumeric = this._entities.alert_level_numeric;
-    const lastUpdated = this._entities.last_updated;
     const lang = this.hass?.locale?.language || this.hass?.language || 'fr';
 
     // Get color for the alert level
@@ -400,15 +394,6 @@ export class VigieauCard extends LitElement {
       cityHtml = html`<span class="card-city">${this._config.city_code}</span>`;
     }
 
-    // Last update timestamp (optional)
-    let lastUpdatedHtml: TemplateResult = html``;
-    if (this._config.show_timestamp && lastUpdated) {
-      const date = new Date(lastUpdated);
-      if (!isNaN(date.getTime())) {
-        lastUpdatedHtml = html`<span class="last-updated">${localizeCommon('last_updated', lang)}: ${date.toLocaleString(lang, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>`;
-      }
-    }
-
     // Active restrictions counter
     let activeCountHtml: TemplateResult = html``;
     if (this._config.show_restrictions) {
@@ -421,18 +406,6 @@ export class VigieauCard extends LitElement {
       }
     }
 
-    // Progress bar only if enabled and numeric level available
-    let progressHtml: TemplateResult = html``;
-    if (this._config.show_progress && alertLevelNumeric !== null && !isNaN(Number(alertLevelNumeric))) {
-      const percent = Math.round((Number(alertLevelNumeric) / 4) * 100);
-      progressHtml = html`
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: ${percent}%"></div>
-        </div>
-        <span class="progress-percent">${percent}%</span>
-      `;
-    }
-
     const alertEntityId = this._config.alert_level_entity;
 
     return html`
@@ -443,7 +416,6 @@ export class VigieauCard extends LitElement {
             ${cityHtml}
           </div>
           <div class="header-meta">
-            ${lastUpdatedHtml}
             ${activeCountHtml}
           </div>
           <div
@@ -458,17 +430,7 @@ export class VigieauCard extends LitElement {
             <ha-icon icon="mdi:alert-circle-outline" style="color: ${color};" aria-hidden="true"></ha-icon>
             <span>${alertText}</span>
           </div>
-          ${progressHtml}
         </div>
-        <ha-icon
-          icon="mdi:refresh"
-          class="refresh-button"
-          role="button"
-          tabindex="0"
-          aria-label="${localizeCommon('refresh', lang)}"
-          @click=${() => this._refresh()}
-          @keydown=${(e: KeyboardEvent) => this._handleRefreshKeyDown(e)}
-        ></ha-icon>
       </div>
     `;
   }
@@ -498,11 +460,9 @@ export class VigieauCard extends LitElement {
       });
     }
 
-    // Ne pas afficher les entités introuvables
-    restrictedEntries = restrictedEntries.filter((entry) => {
-      const info = entry[1];
-      return info.entityFound;
-    });
+    // Les entités introuvables sont conservées et affichées avec un état visuel
+    // d'erreur (classe entity-not-found) pour signaler le problème à l'utilisateur
+    // au lieu d'être masquées silencieusement.
 
     // Sort restrictions according to config
     if (this._config.sort === 'alpha') {
@@ -659,25 +619,6 @@ export class VigieauCard extends LitElement {
   }
 
   /**
-   * Rafraîchit manuellement l'affichage des entités.
-   * Relance _updateEntities() pour relire les états actuels depuis Home Assistant.
-   */
-  private _refresh(): void {
-    this._updateEntities();
-  }
-
-  /**
-   * Gestion clavier pour le bouton de rafraîchissement (Enter / Espace).
-   * @param event - L'événement clavier
-   */
-  private _handleRefreshKeyDown(event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      this._refresh();
-    }
-  }
-
-  /**
    * Render the complete card
    * Combines all sections based on configuration
    * @returns Template result for the entire card
@@ -768,7 +709,6 @@ export class VigieauCard extends LitElement {
         flex-wrap: wrap;
       }
 
-      .last-updated,
       .active-count {
         white-space: nowrap;
       }
@@ -778,11 +718,16 @@ export class VigieauCard extends LitElement {
         align-items: center;
         gap: 8px;
         cursor: pointer;
-        transition: color 0.2s ease;
+        transition: all 0.2s ease;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: var(--secondary-background-color);
+        border: 1px solid var(--divider-color);
       }
 
       .alert-level:hover {
         color: var(--primary-color);
+        background: var(--divider-color);
       }
 
       .alert-level ha-icon {
@@ -844,6 +789,7 @@ export class VigieauCard extends LitElement {
         cursor: pointer;
         transition: all 0.2s ease;
         min-height: 80px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
       }
 
       .restriction-item:hover {
