@@ -32,6 +32,8 @@ export interface VigieauCardConfig {
   show_city?: boolean;
   /** Tri des restrictions : 'config' (ordre config), 'alpha' (alphabétique), 'severity' (sévérité) */
   sort?: 'config' | 'alpha' | 'severity';
+  /** Afficher la barre de progression du niveau d'alerte (0-4) */
+  show_progress?: boolean;
 }
 
 /** Restriction categories known by the vigieau integration, used to auto-build entity ids from a city code. */
@@ -69,6 +71,7 @@ export const DEFAULT_CONFIG: Required<VigieauCardConfig> = {
   hide_no_restriction: false,
   show_city: true,
   sort: 'severity',
+  show_progress: false,
 };
 
 /**

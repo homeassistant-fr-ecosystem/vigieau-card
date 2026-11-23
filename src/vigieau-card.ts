@@ -162,6 +162,9 @@ export class VigieauCard extends LitElement {
       show_restrictions: true,
       compact: false,
       hide_no_restriction: false,
+      show_city: true,
+      sort: 'severity',
+      show_progress: false,
     };
   }
 
@@ -202,18 +205,22 @@ export class VigieauCard extends LitElement {
 
   /**
    * Determine if the card should update based on changed properties
-   * Optimizes rendering by only updating when relevant entities change
+   * Optimizes rendering by only updating when relevant entities change.
+   * Entity references are refreshed here (synchronously, before render) to
+   * avoid a double render cycle caused by calling requestUpdate() in updated().
    * @param changedProps - Map of changed properties
    * @returns True if the card should re-render
    */
   protected shouldUpdate(changedProps: PropertyValues): boolean {
     if (changedProps.has('_config')) {
+      this._updateEntities();
       return true;
     }
 
     if (changedProps.has('hass')) {
       const oldHass = changedProps.get('hass') as HomeAssistant | undefined;
       if (!oldHass || !this._entities || !this._config) {
+        this._updateEntities();
         return true;
       }
 
@@ -222,6 +229,7 @@ export class VigieauCard extends LitElement {
         const oldAlert = oldHass.states[this._config.alert_level_entity];
         const newAlert = this.hass.states[this._config.alert_level_entity];
         if (oldAlert?.state !== newAlert?.state) {
+          this._updateEntities();
           return true;
         }
       }
@@ -231,15 +239,20 @@ export class VigieauCard extends LitElement {
         const oldNum = oldHass.states[this._config.alert_level_numeric_entity];
         const newNum = this.hass.states[this._config.alert_level_numeric_entity];
         if (oldNum?.state !== newNum?.state) {
+          this._updateEntities();
           return true;
         }
       }
 
       // Check if restriction entities changed
       const restrictionEntities = this._getRestrictionEntities();
-      return restrictionEntities.some((entityId: string) => {
+      const changed = restrictionEntities.some((entityId: string) => {
         return oldHass.states[entityId]?.state !== this.hass.states[entityId]?.state;
       });
+      if (changed) {
+        this._updateEntities();
+      }
+      return changed;
     }
 
     return true;
@@ -247,13 +260,10 @@ export class VigieauCard extends LitElement {
 
   /**
    * Lifecycle method called after the element updates
-   * Updates entity references when config or hass changes
+   * (entity references are already refreshed in shouldUpdate to avoid double render)
    */
   protected updated(changedProps: PropertyValues): void {
     super.updated(changedProps);
-    if (changedProps.has('hass') || changedProps.has('_config')) {
-      this._updateEntities();
-    }
   }
 
   /**
@@ -373,9 +383,6 @@ export class VigieauCard extends LitElement {
         isBinary: this._isBinarySensor(entityId),
       });
     }
-
-    // Request update to re-render
-    this.requestUpdate();
   }
 
   /**
@@ -456,7 +463,7 @@ export class VigieauCard extends LitElement {
       <div class="card-header">
         <div class="header-main">
           <div class="card-title">
-            <h3>Vigieau</h3>
+            <h3 id="vigieau-title">Vigieau</h3>
             ${cityHtml}
           </div>
           <div class="header-meta">
@@ -475,6 +482,32 @@ export class VigieauCard extends LitElement {
             <span>${alertText}</span>
           </div>
         </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Render the alert level progress bar (0-4 scale)
+   * @returns Template result for the progress bar section
+   */
+  private _renderProgressBar(): TemplateResult {
+    const alertLevelNumeric = this._entities.alert_level_numeric;
+    const lang = this.hass?.locale?.language || this.hass?.language || 'fr';
+    const numericValue = alertLevelNumeric ? parseFloat(alertLevelNumeric) : 0;
+    const clampedValue = Math.max(0, Math.min(4, numericValue));
+    const percent = (clampedValue / 4) * 100;
+
+    return html`
+      <div class="progress-section" aria-labelledby="progress-label">
+        <span id="progress-label" class="visually-hidden">
+          ${localizeCommon('progress_bar', lang)}
+        </span>
+        <div class="progress-bar" role="progressbar"
+             aria-valuemin="0" aria-valuemax="4" aria-valuenow="${clampedValue}"
+             aria-label="${localizeCommon('progress_bar', lang)}: ${clampedValue}">
+          <div class="progress-fill" style="width: ${percent}%;"></div>
+        </div>
+        <span class="progress-percent">${clampedValue} / 4</span>
       </div>
     `;
   }
@@ -590,6 +623,7 @@ export class VigieauCard extends LitElement {
             role="button"
             tabindex="0"
             aria-label="${ariaLabel}"
+            aria-labelledby="restriction-name-${entity_id}"
             title="${title}"
             @click=${() => this._showMoreInfo(entity_id)}
             @keydown=${(e: KeyboardEvent) => this._handleCardKeyDown(e, entity_id)}
@@ -597,7 +631,7 @@ export class VigieauCard extends LitElement {
           >
             <ha-icon icon="${icon}" style="color: ${color};" aria-hidden="true"></ha-icon>
             <div class="restriction-content">
-              <span class="restriction-name">${displayName}</span>
+              <span id="restriction-name-${entity_id}" class="restriction-name">${displayName}</span>
               <span class="restriction-level" style="color: ${color};">${levelText}</span>
             </div>
           </div>
@@ -695,6 +729,7 @@ export class VigieauCard extends LitElement {
     return html`
       <ha-card class="${this._config.compact ? 'compact' : ''}">
         ${this._config.show_alert_level && hasAlert ? this._renderHeader() : ''}
+        ${this._config.show_progress && hasAlert ? this._renderProgressBar() : ''}
         ${this._config.show_restrictions && hasRestrictions ? this._renderRestrictions() : ''}
       </ha-card>
     `;
@@ -961,6 +996,18 @@ export class VigieauCard extends LitElement {
         font-size: 0.65em;
       }
 
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
       .config-missing {
         display: flex;
         align-items: center;
@@ -993,6 +1040,31 @@ export class VigieauCard extends LitElement {
       .refresh-button:focus-visible {
         outline: 2px solid var(--primary-color);
         outline-offset: 2px;
+      }
+
+      /* Accessibility: respect prefers-reduced-motion */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+
+        .alert-level,
+        .restriction-item {
+          transition: none !important;
+        }
+
+        .restriction-item:active {
+          transform: none !important;
+        }
+
+        .refresh-button:hover {
+          transform: none !important;
+        }
       }
 
       @media (max-width: 600px) {

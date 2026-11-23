@@ -26,6 +26,8 @@ export interface VigieauCardEditorConfig {
   show_city?: boolean;
   /** Tri des restrictions : 'config' (ordre config), 'alpha' (alphabétique), 'severity' (sévérité) */
   sort?: 'config' | 'alpha' | 'severity';
+  /** Afficher la barre de progression du niveau d'alerte (0-4) */
+  show_progress?: boolean;
 }
 
 /**
@@ -45,6 +47,8 @@ export class VigieauCardEditor extends LitElement {
     compact: false,
     hide_no_restriction: false,
     show_city: true,
+    sort: 'severity',
+    show_progress: false,
   };
 
   /**
@@ -237,6 +241,44 @@ export class VigieauCardEditor extends LitElement {
         >
           ${isFr ? 'Afficher la ville' : 'Show city'}
         </ha-switch>
+
+        <!-- Show progress bar -->
+        <div style="margin-top: 16px;">
+          <div style="font-weight: 500; margin-bottom: 8px;">
+            ${isFr ? 'Barre de progression' : 'Progress bar'}
+          </div>
+          <ha-switch
+            .checked=${this._config.show_progress}
+            @change=${(e: Event) => {
+              this._config.show_progress = (e.target as HTMLInputElement).checked;
+              this._notifyConfigChanged();
+            }}
+          >
+            ${isFr ? 'Afficher la barre de progression' : 'Show progress bar'}
+          </ha-switch>
+        </div>
+
+        <!-- Sort restrictions -->
+        <div style="margin-top: 16px;">
+          <div style="font-weight: 500; margin-bottom: 8px;">
+            ${isFr ? 'Tri des restrictions' : 'Sort restrictions'}
+          </div>
+          <select
+            .value=${this._config.sort || 'config'}
+            @change=${(e: Event) => {
+              this._config.sort = (e.target as HTMLSelectElement).value as
+                | 'config'
+                | 'alpha'
+                | 'severity';
+              this._notifyConfigChanged();
+            }}
+            style="width: 100%; padding: 8px; font-size: 1rem; border: 1px solid var(--divider-color); border-radius: 4px; background: var(--input-background-color, var(--card-background-color)); color: var(--primary-text-color); box-sizing: border-box;"
+          >
+            <option value="config">${isFr ? 'Ordre de configuration' : 'Config order'}</option>
+            <option value="alpha">${isFr ? 'Alphabétique' : 'Alphabetical'}</option>
+            <option value="severity">${isFr ? 'Sévérité' : 'Severity'}</option>
+          </select>
+        </div>
 
       </ha-settings>
     `;
