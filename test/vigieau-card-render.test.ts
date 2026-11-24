@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { VigieauCard } from './vigieau-card';
+import { VigieauCard } from '../src/vigieau-card';
 import { HomeAssistant } from 'custom-card-helpers';
-import { VigieauCardConfig } from './config';
+import { VigieauCardConfig } from '../src/config';
 
 /**
  * Crée un objet HomeAssistant minimal pour les tests.

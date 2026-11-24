@@ -204,6 +204,16 @@ export class VigieauCard extends LitElement {
   }
 
   /**
+   * Get the grid options for Lovelace card layout.
+   * The card adapts to a 2-column grid by default, letting Home Assistant
+   * size it appropriately within a view.
+   * @returns Grid layout options
+   */
+  public getGridOptions(): { columns: number } {
+    return { columns: 2 };
+  }
+
+  /**
    * Determine if the card should update based on changed properties
    * Optimizes rendering by only updating when relevant entities change.
    * Entity references are refreshed here (synchronously, before render) to

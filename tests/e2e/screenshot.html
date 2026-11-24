@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vigieau Card — Screenshot light/dark</title>
+  <script type="module" src="/dist/vigieau-card.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html {
+      --primary-color: #03a9f4;
+      --primary-text-color: #212121;
+      --secondary-text-color: #757575;
+      --card-background-color: #ffffff;
+      --secondary-background-color: #fafafa;
+      --divider-color: #e0e0e0;
+      --success-color: #4caf50;
+      --error-color: #f44336;
+      --warning-color: #ff9800;
+      --info-color: #2196f3;
+      --state-climate-heat-color: #ff9800;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    html.dark {
+      --primary-text-color: #ffffff;
+      --secondary-text-color: #bdbdbd;
+      --card-background-color: #303030;
+      --secondary-background-color: #424242;
+      --divider-color: #616161;
+      background: #303030;
+      color: #ffffff;
+    }
+    body { padding: 20px; background: var(--secondary-background-color); }
+    #container { max-width: 420px; min-height: 300px; }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  <script>
+    // --- Minimal stand-ins for Home Assistant frontend elements (ha-*) so the
+    // card renders standalone outside of Home Assistant. ---
+    const ICON_EMOJI = {
+      'alert': '⚠️', 'alert-circle-outline': '⚠️',
+      'fountain': '⛲', 'grass': '🌱', 'pool': '🏊', 'watering-can': '🚿',
+      'car-wash': '🚗', 'cow': '🐄', 'water-pump': '🚰', 'golf': '⛳',
+      'corn': '🌽', 'waves': '🌊', 'ferry': '⛴️', 'hydro-power': '⚡',
+      'road': '🛣️', 'home-roof': '🏠', 'water': '💧', 'tree': '🌳',
+      'sail-boat': '⛵',
+    };
+
+    function emojiFor(icon) {
+      const name = (icon || '').split(':').pop();
+      return ICON_EMOJI[name] || '●';
+    }
+
+    class HaCard extends HTMLElement {
+      constructor() { super(); this.attachShadow({ mode: 'open' }); }
+      connectedCallback() {
+        this.shadowRoot.innerHTML = `
+          <style>
+            :host { display: block; border: 1px solid var(--divider-color, #e0e0e0); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background: var(--card-background-color, #fff); padding: 16px; box-sizing: border-box; font-family: inherit; }
+          </style>
+          <slot></slot>`;
+      }
+    }
+    customElements.define('ha-card', HaCard);
+
+    class HaIcon extends HTMLElement {
+      static get observedAttributes() { return ['icon']; }
+      constructor() { super(); this.attachShadow({ mode: 'open' }); }
+      connectedCallback() { this.render(); }
+      attributeChangedCallback() { this.render(); }
+      render() {
+        this.shadowRoot.innerHTML = `
+          <style>
+            :host { display: inline-block; width: 24px; height: 24px; vertical-align: middle; line-height: 1; font-size: 20px; }
+          </style>
+          <span>${emojiFor(this.getAttribute('icon'))}</span>`;
+      }
+    }
+    customElements.define('ha-icon', HaIcon);
+
+    async function main() {
+      const tagName = 'vigieau-card';
+      while (!customElements.get(tagName)) {
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      const city = 'thorigne_fouillard';
+
+      const card = document.createElement(tagName);
+      card.hass = {
+        states: {
+          // Niveau d'alerte
+          [`sensor.outdoor_vigieau_${city}_aep_alert_level_in_${city}`]: {
+            state: 'alerte',
+            attributes: { Couleur: 'orange', friendly_name: 'Niveau d\'alerte' },
+          },
+          [`sensor.outdoor_vigieau_${city}_aep_alert_level_in_${city}_numeric`]: {
+            state: '3',
+            attributes: { friendly_name: 'Niveau d\'alerte (numérique)' },
+          },
+          // Restrictions actives (sévérité mixte pour un screenshot représentatif)
+          [`sensor.vigieau_aep_fountain_supply_restrictions_in_${city}`]: {
+            state: 'interdiction',
+            attributes: { categorie: 'fountain_supply', Couleur: 'red', friendly_name: 'Alimentation des fontaines' },
+          },
+          [`sensor.vigieau_aep_lawn_watering_restrictions_in_${city}`]: {
+            state: 'alerte renforcée',
+            attributes: { categorie: 'lawn_watering', Couleur: 'orange', friendly_name: 'Arrosage pelouse' },
+          },
+          [`sensor.vigieau_aep_vehicle_washing_restrictions_in_${city}`]: {
+            state: 'interdiction sur plage horaire',
+            attributes: { categorie: 'vehicle_washing', Couleur: 'red', friendly_name: 'Lavage véhicule' },
+          },
+          [`sensor.vigieau_aep_pool_draining_and_filling_restrictions_in_${city}`]: {
+            state: 'aucune restriction',
+            attributes: { categorie: 'pool_draining_and_filling', Couleur: 'green', friendly_name: 'Vidange/remplissage piscine' },
+          },
+        },
+        entities: {},
+        services: {},
+        translate: (key, options) => key,
+        connection: { subscribeMessage: () => () => {} },
+        language: 'fr',
+        locale: { language: 'fr' },
+      };
+
+      try {
+        card.setConfig({
+          type: 'custom:vigieau-card',
+          city_code: '35322',
+          alert_level_entity: `sensor.outdoor_vigieau_${city}_aep_alert_level_in_${city}`,
+          alert_level_numeric_entity: `sensor.outdoor_vigieau_${city}_aep_alert_level_in_${city}_numeric`,
+          restriction_entities: [
+            `sensor.vigieau_aep_fountain_supply_restrictions_in_${city}`,
+            `sensor.vigieau_aep_lawn_watering_restrictions_in_${city}`,
+            `sensor.vigieau_aep_vehicle_washing_restrictions_in_${city}`,
+            `sensor.vigieau_aep_pool_draining_and_filling_restrictions_in_${city}`,
+          ],
+          show_alert_level: true,
+          show_progress: true,
+          show_restrictions: true,
+          compact: false,
+          hide_no_restriction: false,
+          show_city: true,
+          sort: 'severity',
+        });
+      } catch (e) {
+        console.error('setConfig error:', e.message);
+      }
+
+      document.getElementById('container').appendChild(card);
+      await card.updateComplete;
+    }
+
+    main().catch(console.error);
+  </script>
+</body>
+</html>

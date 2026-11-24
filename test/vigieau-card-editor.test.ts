@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { VigieauCardEditor, VigieauCardEditorConfig } from './vigieau-card-editor';
-import { buildEntityIdsFromCityCode } from './vigieau-card';
+import { VigieauCardEditor, VigieauCardEditorConfig } from '../src/vigieau-card-editor';
+import { buildEntityIdsFromCityCode } from '../src/vigieau-card';
 
 describe('VigieauCardEditor', () => {
   describe('getStubConfig', () => {

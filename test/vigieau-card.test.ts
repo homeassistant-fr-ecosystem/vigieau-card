@@ -6,8 +6,8 @@ import {
   getCategoryDisplayName,
   getCategoryIcon,
   VigieauCard,
-} from './vigieau-card';
-import type { VigieauCardConfig } from './config';
+} from '../src/vigieau-card';
+import type { VigieauCardConfig } from '../src/config';
 import type { HomeAssistant } from 'custom-card-helpers';
 
 describe('getRestrictionColor', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { localizeCommon } from './localize';
+import { localizeCommon } from '../src/localize';
 
 describe('localizeCommon', () => {
   it('retourne la traduction française pour une clé existante', () => {

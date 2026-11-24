@@ -2,3 +2,5 @@ node_modules/
 coverage/
 *.log
 src/version.generated.ts
+playwright-report/
+test-results/
