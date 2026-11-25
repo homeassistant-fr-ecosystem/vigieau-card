@@ -4,3 +4,4 @@ coverage/
 src/version.generated.ts
 playwright-report/
 test-results/
+dist/
